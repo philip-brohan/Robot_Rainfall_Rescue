@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Convert all the WW1 logbook images to tensors for ML model training
+# Convert all the Ten-year rainfall images to tensors for ML model training
 
 # Partition off 1/10 of them to be test data
 
@@ -9,14 +9,11 @@
 
 import os
 
+rootd = "%s/station_images/ten_year_rainfall/images" % os.getenv("SCRATCH")
+
 # Function to check if the job is already done for this timepoint
-def is_done(dirn, filen, purpose):
-    op_file_name = "%s/ML_logbooks/images/%s/%s/%s.tfd" % (
-        os.getenv("SCRATCH"),
-        purpose,
-        dirn,
-        filen,
-    )
+def is_done(period, book, filen, purpose):
+    op_file_name = "%s/%s/%s/%s/%s.tfd" % (rootd, purpose, period, book, filen,)
     if os.path.isfile(op_file_name):
         return True
     return False
@@ -24,23 +21,30 @@ def is_done(dirn, filen, purpose):
 
 f = open("run.sh", "w+")
 
-dirs = os.listdir("%s/logbook_images/NA_WW1" % os.getenv("SCRATCH"))
 
 count = 1
-for dir in dirs:
-    files = os.listdir("%s/logbook_images/NA_WW1/%s" % (os.getenv("SCRATCH"), dir))
-    for file in files:
-        if count % 10 == 0:
-            if not is_done(dir, file, "test"):
-                cmd = './image_to_tensor.py --dirn="%s" --filen="%s" --test\n' % (
-                    dir,
-                    file,
-                )
-                f.write(cmd)
-        else:
-            if not is_done(dir, file, "training"):
-                cmd = './image_to_tensor.py --dirn="%s" --filen="%s"\n' % (dir, file)
-                f.write(cmd)
-        count += 1
+periods = os.listdir(rootd)
+for period in periods:
+    books = os.listdir("%s/%s" % (rootd, period))
+    for book in books:
+        files = os.listdir("%s/%s/%s" % (rootd, period, book))
+        for filen in files:
+            if filen == "0000.jpg":
+                continue  # skip title pages
+            if count % 10 == 0:
+                if not is_done(period, book, filen, "test"):
+                    cmd = (
+                        './image_to_tensor.py --pern=%s --docn="%s" --filen="%s" --test\n'
+                        % (period, book, filen)
+                    )
+                    f.write(cmd)
+            else:
+                if not is_done(period, book, filen, "training"):
+                    cmd = (
+                        './image_to_tensor.py --pern=%s --docn="%s" --filen="%s"\n'
+                        % (period, book, filen)
+                    )
+                    f.write(cmd)
+            count += 1
 
 f.close()

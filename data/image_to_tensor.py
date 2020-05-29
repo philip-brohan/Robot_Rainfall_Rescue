@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Convert a double-page logbook image to a 1024px-square tensor
+# Convert a single-page rainfall image to a 768x1024px tensor
 
 import os
 import sys
@@ -12,7 +12,8 @@ from PIL import Image
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dirn", help="Directory name", type=str, required=True)
+parser.add_argument("--pern", help="Period", type=str, required=True)
+parser.add_argument("--docn", help="Document name", type=str, required=True)
 parser.add_argument("--filen", help="File name", type=str, required=True)
 parser.add_argument("--test", help="test data, not training", action="store_true")
 parser.add_argument(
@@ -23,22 +24,19 @@ if args.opfile is None:
     purpose = "training"
     if args.test:
         purpose = "test"
-    args.opfile = ("%s/ML_logbooks/images/" + "%s/%s/%s.tfd") % (
+    args.opfile = ("%s/ML_ten_year_rainfall/images/" + "%s/%s/%s/%s.tfd") % (
         os.getenv("SCRATCH"),
         purpose,
-        args.dirn,
+        args.pern,
+        args.docn,
         args.filen,
     )
 
 # Load the image as data
 image = Image.open(
-    "%s/logbook_images/NA_WW1/%s/%s" % (os.getenv("SCRATCH"), args.dirn, args.filen)
+    "%s/station_images/ten_year_rainfall/images/%s/%s/%s"
+    % (os.getenv("SCRATCH"), args.pern, args.docn, args.filen)
 )
-
-# Basic check to see if it's a double page spread - give up otherwise
-(width, height) = image.size
-if width < 4000 or width < height:
-    sys.exit(1)
 
 # Output the tensor
 
@@ -50,7 +48,7 @@ if not os.path.isdir(os.path.dirname(args.opfile)):
 
 # Convert to Tensor - normalised and scaled
 image = image.convert("RGB")
-image = image.resize((1024, 1024))
+image = image.resize((768, 1024))
 image_n = numpy.array(image, numpy.float32) / 256
 ict = tf.convert_to_tensor(image_n, numpy.float32)
 
