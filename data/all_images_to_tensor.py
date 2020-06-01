@@ -19,8 +19,7 @@ def is_done(period, book, filen, purpose):
     return False
 
 
-f = open("run.sh", "w+")
-
+f = open("run_i2t.sh", "w+")
 
 count = 1
 periods = os.listdir(rootd)
@@ -34,16 +33,16 @@ for period in periods:
             if count % 10 == 0:
                 if not is_done(period, book, filen, "test"):
                     cmd = (
-                        './image_to_tensor.py --pern=%s --docn="%s" --filen="%s" --test\n'
-                        % (period, book, filen)
-                    )
+                        "conda activate ml_ten_year_rainfall; "
+                        + './image_to_tensor.py --pern=%s --docn="%s" --filen="%s" --test\n'
+                    ) % (period, book, filen)
                     f.write(cmd)
             else:
                 if not is_done(period, book, filen, "training"):
                     cmd = (
-                        './image_to_tensor.py --pern=%s --docn="%s" --filen="%s"\n'
-                        % (period, book, filen)
-                    )
+                        "conda activate ml_ten_year_rainfall; "
+                        + './image_to_tensor.py --pern=%s --docn="%s" --filen="%s"\n'
+                    ) % (period, book, filen)
                     f.write(cmd)
             count += 1
 
