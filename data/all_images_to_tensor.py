@@ -13,7 +13,13 @@ rootd = "%s/station_images/ten_year_rainfall/images" % os.getenv("SCRATCH")
 
 # Function to check if the job is already done for this timepoint
 def is_done(period, book, filen, purpose):
-    op_file_name = "%s/%s/%s/%s/%s.tfd" % (rootd, purpose, period, book, filen,)
+    op_file_name = "%s/ML_ten_year_rainfall/images/%s/%s/%s/%s.tfd" % (
+        os.getenv("SCRATCH"),
+        purpose,
+        period,
+        book,
+        filen,
+    )
     if os.path.isfile(op_file_name):
         return True
     return False
