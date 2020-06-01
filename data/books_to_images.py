@@ -9,7 +9,7 @@ import tempfile
 
 local_dir = "%s/station_images/ten_year_rainfall/" % os.getenv("SCRATCH")
 
-periods = ("1860-1869", "1677-1886")
+periods = ("1890-1899", "1880-1889")
 
 for period in periods:
     pdir = "%s/originals/%s" % (local_dir, period)
