@@ -46,7 +46,7 @@ def getImageDataset(purpose="training", nImages=None):
 
     # Create TensorFlow Dataset object from the file namelist
     itList = tf.constant(inFiles)
-    tr_data = tf.data.Dataset.from_tensor_slices(itList).repeat()
+    tr_data = tf.data.Dataset.from_tensor_slices(itList)
 
     # Convert the Dataset from file names to file contents
     tr_data = tr_data.map(load_tensor)

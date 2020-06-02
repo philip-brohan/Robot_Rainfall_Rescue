@@ -27,12 +27,12 @@ bufferSize = 100  # Shouldn't make much difference
 batchSize = 1  # Bigger is faster, but takes more memory, and probably is less accurate
 
 # Set up the training data
-trainingData = getImageDataset(purpose="training", nImages=nTrainingImages)
+trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
 trainingData = tf.data.Dataset.zip((trainingData, trainingData))
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
 
 # Set up the test data
-testData = getImageDataset(purpose="test", nImages=nTestImages)
+testData = getImageDataset(purpose="test", nImages=nTestImages).repeat()
 testData = tf.data.Dataset.zip((testData, testData))
 testData = testData.batch(batchSize)
 
