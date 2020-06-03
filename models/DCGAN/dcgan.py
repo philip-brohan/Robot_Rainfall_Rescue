@@ -83,15 +83,14 @@ def train(dataset, epochs):
         for imageBatch in dataset:
             trainStep(imageBatch)
 
-        # Save the model every 15 epochs
-        if (epoch + 1) % 15 == 0:
-            save_dir = ("%s/ML_ten_year_rainfall/dcgan/" + "Epoch_%04d") % (
-                os.getenv("SCRATCH"),
-                epoch,
-            )
-            if not os.path.isdir(save_dir):
-                os.makedirs(save_dir)
-            checkpoint.save(file_prefix="%s/ckpt" % save_dir)
+        # Save the model every epoch
+        save_dir = ("%s/ML_ten_year_rainfall/dcgan/" + "Epoch_%04d") % (
+            os.getenv("SCRATCH"),
+            epoch,
+        )
+        if not os.path.isdir(save_dir):
+            os.makedirs(save_dir)
+        checkpoint.save(file_prefix="%s/ckpt" % save_dir)
 
         print("Time for epoch {} is {} sec".format(epoch + 1, time.time() - start))
 
