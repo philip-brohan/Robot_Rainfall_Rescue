@@ -20,7 +20,7 @@ sys.path.append("%s/../autoencoder" % os.path.dirname(__file__))
 from makeDataset import getImageDataset
 
 # How many epochs to train for
-nEpochs = 2
+nEpochs = 100
 
 # Latent space dimension
 latentDim = 100

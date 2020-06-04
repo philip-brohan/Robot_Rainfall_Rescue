@@ -16,11 +16,11 @@ from autoencoderModel import autoencoderModel
 from makeDataset import getImageDataset
 
 # How many epochs to train for
-nEpochs = 2
+nEpochs = 26
 
 # How many images to use?
-nTrainingImages = 3182  # Max is 31823
-nTestImages = 353  # Max is 3535
+nTrainingImages = 31823  # Max is 31823
+nTestImages = 3535  # Max is 3535
 
 # Dataset parameters
 bufferSize = 100  # Shouldn't make much difference
