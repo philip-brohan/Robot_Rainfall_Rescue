@@ -15,16 +15,21 @@ from autoencoderModel import autoencoderModel
 # Load the data source provider
 from makeDataset import getImageDataset
 
-# How many epochs to train for
-nEpochs = 26
-
 # How many images to use?
 nTrainingImages = 31823  # Max is 31823
-nTestImages = 3535  # Max is 3535
+nTestImages = 353  # Max is 3535
+
+# How many epochs to train for
+nEpochs = 200
+# Length of an epoch - if None, same as nTrainingImages
+nImagesInEpoch = 1000
+
+if nImagesInEpoch is None:
+    nImagesInEpoch = nTrainingImages
 
 # Dataset parameters
 bufferSize = 100  # Shouldn't make much difference
-batchSize = 1  # Bigger is faster, but takes more memory, and probably is less accurate
+batchSize = 10  # Bigger is faster, but takes more memory, and probably is less accurate
 
 # Set up the training data
 trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
@@ -77,7 +82,7 @@ autoencoder.compile(
 history = autoencoder.fit(
     x=trainingData,
     epochs=nEpochs,
-    steps_per_epoch=nTrainingImages // batchSize,
+    steps_per_epoch=nImagesInEpoch // batchSize,
     validation_data=testData,
     validation_steps=nTestImages // batchSize,
     verbose=1,
