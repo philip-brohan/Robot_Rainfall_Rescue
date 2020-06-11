@@ -9,17 +9,15 @@ import os
 
 rootd = "%s/ML_ten_year_rainfall/fakes/plain/images/" % os.getenv("SCRATCH")
 
-# Function to check if the job is already done for this timepoint
-def is_done(dirn):
-    op_file_name = "%s%s.tfd" % (os.getenv("SCRATCH"), dirn)
-    if os.path.isfile(op_file_name):
-        return True
-    return False
-
 
 f = open("run_i2t.sh", "w+")
 
 for doci in range(10000):
+    if os.path.isfile(
+        "%s/ML_ten_year_rainfall/fakes/plain/tensors/images/%04d.tfd"
+        % (os.getenv("SCRATCH"), doci)
+    ):
+        continue
     cmd = (
         "conda activate ml_ten_year_rainfall; " + './image_to_tensor.py --docn="%04d"\n'
     ) % doci
