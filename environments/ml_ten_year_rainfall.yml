@@ -5,9 +5,13 @@ channels:
 dependencies:
   - python=3.7
   - tensorflow=2.2.*
-  - tensorboard=2.2.*
   - pillow=7.1.*
   - matplotlib=3.2.*
   - pdf2image=1.13.*
 # Optional, code formatter
   - black
+# Optional, tensorboard and profiler
+  - tensorboard=2.2.*
+  - pip
+  - pip:
+    - tensorboard_plugin_profile

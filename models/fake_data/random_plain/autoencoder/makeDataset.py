@@ -44,6 +44,8 @@ def getImageDataset(purpose="training", nImages=None):
     tr_data = tf.data.Dataset.from_tensor_slices(itList)
 
     # Convert the Dataset from file names to file contents
-    tr_data = tr_data.map(load_tensor)
+    tr_data = tr_data.map(load_tensor,num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    # Optimisation
+    tr_data = tr_data.prefetch(tf.data.experimental.AUTOTUNE)
 
     return tr_data
