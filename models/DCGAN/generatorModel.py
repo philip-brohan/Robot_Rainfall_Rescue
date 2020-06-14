@@ -21,26 +21,31 @@ class generatorModel(tf.keras.Model):
         self.conv1A = tf.keras.layers.Conv2DTranspose(
             256, (3, 3), strides=(2, 2), padding="same"
         )
+        self.norm1A = tf.keras.layers.BatchNormalization()
         self.act1A = tf.keras.layers.ELU()
         # Now (32,24,256)
         self.conv1B = tf.keras.layers.Conv2DTranspose(
             128, (3, 3), strides=(2, 2), padding="same"
         )
+        self.norm1B = tf.keras.layers.BatchNormalization()
         self.act1B = tf.keras.layers.ELU()
         # Now (64,48,128)
         self.conv1C = tf.keras.layers.Conv2DTranspose(
             64, (3, 3), strides=(2, 2), padding="same"
         )
+        self.norm1C = tf.keras.layers.BatchNormalization()
         self.act1C = tf.keras.layers.ELU()
         # Now (128,96,64)
         self.conv1D = tf.keras.layers.Conv2DTranspose(
             32, (3, 3), strides=(2, 2), padding="same"
         )
+        self.norm1D = tf.keras.layers.BatchNormalization()
         self.act1D = tf.keras.layers.ELU()
         # Now (256,192,32)
         self.conv1E = tf.keras.layers.Conv2DTranspose(
             16, (3, 3), strides=(2, 2), padding="same"
         )
+        self.norm1E = tf.keras.layers.BatchNormalization()
         self.act1E = tf.keras.layers.ELU()
         # Now (512,384,16)
         self.conv1F = tf.keras.layers.Conv2DTranspose(
@@ -52,14 +57,19 @@ class generatorModel(tf.keras.Model):
         x = self.unpack_from_l(inputs)
         x = self.unflatten(x)
         x = self.conv1A(x)
+        x = self.norm1A(x)
         x = self.act1A(x)
         x = self.conv1B(x)
+        x = self.norm1B(x)
         x = self.act1B(x)
         x = self.conv1C(x)
+        x = self.norm1C(x)
         x = self.act1C(x)
         x = self.conv1D(x)
+        x = self.norm1D(x)
         x = self.act1D(x)
         x = self.conv1E(x)
+        x = self.norm1E(x)
         x = self.act1E(x)
         x = self.conv1F(x)
         return x
