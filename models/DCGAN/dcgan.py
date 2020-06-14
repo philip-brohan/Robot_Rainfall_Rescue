@@ -20,17 +20,17 @@ sys.path.append("%s/../autoencoder" % os.path.dirname(__file__))
 from makeDataset import getImageDataset
 
 # How many epochs to train for
-nEpochs = 100
+nEpochs = 500
 
 # Latent space dimension
 latentDim = 100
 
 # How many images to use?
-nTrainingImages = 3182  # Max is 31823
+nTrainingImages = 31823  # Max is 31823
 
 # Dataset parameters
 bufferSize = 100  # Shouldn't make much difference
-batchSize = 16  # Big enough for a variety of discriminator results
+batchSize = 32  # Big enough for a variety of discriminator results
 
 # Set up the training data
 trainingData = getImageDataset(purpose="training", nImages=nTrainingImages)
