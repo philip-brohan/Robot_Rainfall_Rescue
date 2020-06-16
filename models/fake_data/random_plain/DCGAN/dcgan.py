@@ -33,7 +33,7 @@ bufferSize = 100  # Shouldn't make much difference
 batchSize = 16  # Big enough for a variety of discriminator results
 
 # Set up the training data
-trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
+trainingData = getImageDataset(purpose="training", nImages=nTrainingImages)
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
 
 # Instantiate the models

@@ -13,7 +13,7 @@ import tensorflow.keras.backend as K
 #  pre-trained weights and use it for prediction.
 
 # Dimensionality of latent space
-latent_dim = 100
+latent_dim = 512
 
 # Specify and encoder model to pack the input into a latent space
 class encoderModel(tf.keras.Model):

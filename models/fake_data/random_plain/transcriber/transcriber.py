@@ -40,11 +40,11 @@ trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
 # Set up the test data
 testImageData = getImageDataset(purpose="test", nImages=nTestImages).repeat()
 testNumbersData = getNumbersDataset(purpose="test", nImages=nTestImages).repeat()
-testData = tf.data.Dataset.zip((testData, testData))
+testData = tf.data.Dataset.zip((testImageData, testNumbersData))
 testData = testData.batch(batchSize)
 
 # Instantiate the model
-autoencoder = transcriberModel()
+transcriber = transcriberModel()
 
 # Save the model weights and the history state after every epoch
 history = {}
@@ -67,11 +67,11 @@ class CustomSaver(tf.keras.callbacks.Callback):
 
 
 # Train the transcriber
-autoencoder.compile(
+transcriber.compile(
     optimizer=tf.keras.optimizers.Adadelta(
         learning_rate=1.0, rho=0.95, epsilon=1e-07, name="Adadelta"
     ),
-    loss="binary_crossentropy",
+    loss=tf.keras.losses.CategoricalCrossentropy(),
 )
 history = transcriber.fit(
     x=trainingData,
