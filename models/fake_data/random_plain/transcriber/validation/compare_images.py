@@ -13,6 +13,7 @@ import matplotlib
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
+from matplotlib.lines import Line2D
 
 sys.path.append("%s/../" % os.path.dirname(__file__))
 from transcriberModel import transcriberModel
@@ -29,11 +30,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
-autoencoder = autoencoderModel()
+transcriber = transcriberModel()
 weights_dir = (
     "%s/ML_ten_year_rainfall/fake/random_plain/transcriber/" + "Epoch_%04d"
 ) % (os.getenv("SCRATCH"), args.epoch - 1,)
-load_status = autoencoder.load_weights("%s/ckpt" % weights_dir)
+load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 # Check the load worked
 load_status.assert_existing_objects_matched()
 
@@ -46,7 +47,7 @@ testNumbers = testNumbers.batch(1)
 originalNumbers = next(itertools.islice(testNumbers, args.image, args.image + 1))
 
 # Run that test image through the transcriber
-encoded = transcriber.predict_on_batch(original)
+encoded = transcriber.predict_on_batch(originalImage)
 
 # Plot original image on the left - make an image from the encoded numbers
 #  on the right
@@ -63,6 +64,8 @@ fig = Figure(
 canvas = FigureCanvas(fig)
 # Paint the background white - why is this needed?
 ax_full = fig.add_axes([0, 0, 1, 1])
+ax_full.set_xlim([0, 1])
+ax_full.set_ylim([0, 1])
 ax_full.add_patch(
     matplotlib.patches.Rectangle((0, 0), 1, 1, fill=True, facecolor="white")
 )
@@ -70,10 +73,12 @@ ax_full.add_patch(
 # Original
 ax_original = fig.add_axes([0.02, 0.015, 0.47, 0.97])
 ax_original.set_axis_off()
-ax_original.matshow(tf.reshape(original, [1024, 768, 3]))
+ax_original.matshow(tf.reshape(originalImage, [1024, 768, 3]))
 
 # Plot encoded using same method as original plot
 ax_encoded = fig.add_axes([0.51, 0.015, 0.47, 0.97])
+ax_encoded.set_xlim([0, 1])
+ax_encoded.set_ylim([0, 1])
 ax_encoded.set_axis_off()
 imp = {
     "scale": 1.0,
