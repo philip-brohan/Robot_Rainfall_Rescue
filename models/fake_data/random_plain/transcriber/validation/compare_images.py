@@ -293,6 +293,39 @@ for ydx in range(10):
         verticalalignment="center",
     )
 
+# Add the transcribed numbers
+orig = originalNumbers.numpy()
+trnb = encoded.numpy()
+tidx = 0
+for yri in range(10):
+    x = (
+        imp["monthsWidth"]
+        + (yri + 0.5) * (1.0 - imp["meansWidth"] - imp["monthsWidth"]) / 10
+    )
+    tp = topAt(x)
+    for mni in range(12):
+        lft = leftAt(
+            1.0
+            - imp["yearHeight"]
+            - (mni + 1)
+            * (1.0 - imp["yearHeight"] - imp["totalsHeight"])
+            / (len(months) + 1)
+        )
+        for dgi in range(3):
+            originalDigit = numpy.where(orig[tidx, :] == 1.0)[0]
+            dgProbabilities = trnb[tidx, :]
+            bestTranscribed = numpy.where(
+                dgProbabilities == numpy.amax(dgProbabilities)
+            )[0]
+            ax_full.text(
+                tp[0] - 0.05 + dgi * 0.02,
+                lft[1],
+                "%1d" % originalDigit,
+                fontsize=imp["fontSize"],
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+
 
 # Render the figure as a png
 fig.savefig("compare.png")
