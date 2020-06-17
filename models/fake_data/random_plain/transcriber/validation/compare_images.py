@@ -294,8 +294,8 @@ for ydx in range(10):
     )
 
 # Add the transcribed numbers
-orig = originalNumbers.numpy()
-trnb = encoded.numpy()
+orig = originalNumbers
+trnb = encoded
 tidx = 0
 for yri in range(10):
     x = (
@@ -312,19 +312,24 @@ for yri in range(10):
             / (len(months) + 1)
         )
         for dgi in range(3):
-            originalDigit = numpy.where(orig[tidx, :] == 1.0)[0]
-            dgProbabilities = trnb[tidx, :]
+            originalDigit = numpy.where(orig[0,tidx, :] == 1.0)[0]
+            dgProbabilities = trnb[0,tidx, :]
             bestTranscribed = numpy.where(
                 dgProbabilities == numpy.amax(dgProbabilities)
             )[0]
-            ax_full.text(
-                tp[0] - 0.05 + dgi * 0.02,
+            colour='red'
+            if bestTranscribed==originalDigit:
+                colour='blue'
+            ax_encoded.text(
+                tp[0]-0.015+dgi*0.015,
                 lft[1],
-                "%1d" % originalDigit,
+                "%1d" % bestTranscribed,
                 fontsize=imp["fontSize"],
                 horizontalalignment="center",
                 verticalalignment="center",
+                color=colour,
             )
+            tidx += 1
 
 
 # Render the figure as a png
