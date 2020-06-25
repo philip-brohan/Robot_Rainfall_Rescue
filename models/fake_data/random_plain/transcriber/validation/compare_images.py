@@ -52,7 +52,7 @@ encoded = transcriber.predict_on_batch(originalImage)
 # Plot original image on the left - make an image from the encoded numbers
 #  on the right
 fig = Figure(
-    figsize=(16.28, 11.25),
+    figsize=(16.34, 10.56),
     dpi=100,
     facecolor="white",
     edgecolor="black",
@@ -312,16 +312,16 @@ for yri in range(10):
             / (len(months) + 1)
         )
         for dgi in range(3):
-            originalDigit = numpy.where(orig[0,tidx, :] == 1.0)[0]
-            dgProbabilities = trnb[0,tidx, :]
+            originalDigit = numpy.where(orig[0, tidx, :] == 1.0)[0]
+            dgProbabilities = trnb[0, tidx, :]
             bestTranscribed = numpy.where(
                 dgProbabilities == numpy.amax(dgProbabilities)
             )[0]
-            colour='red'
-            if bestTranscribed==originalDigit:
-                colour='blue'
+            colour = "red"
+            if bestTranscribed == originalDigit:
+                colour = "blue"
             ax_encoded.text(
-                tp[0]-0.015+dgi*0.015,
+                tp[0] - 0.015 + dgi * 0.015,
                 lft[1],
                 "%1d" % bestTranscribed,
                 fontsize=imp["fontSize"],
@@ -330,7 +330,63 @@ for yri in range(10):
                 color=colour,
             )
             tidx += 1
-
+# Add the monthly means
+tp = topAt(1.0 - imp["meansWidth"] / 2)
+for mni in range(12):
+    lft = leftAt(
+        1.0
+        - imp["yearHeight"]
+        - (mni + 1)
+        * (1.0 - imp["yearHeight"] - imp["totalsHeight"])
+        / (len(months) + 1)
+    )
+    for dgi in range(3):
+        originalDigit = numpy.where(orig[0, tidx, :] == 1.0)[0]
+        dgProbabilities = trnb[0, tidx, :]
+        bestTranscribed = numpy.where(
+            dgProbabilities == numpy.amax(dgProbabilities)
+        )[0]
+        colour = "red"
+        if bestTranscribed == originalDigit:
+            colour = "blue"
+        ax_encoded.text(
+            tp[0] - 0.015 + dgi * 0.015,
+            lft[1],
+            "%1d" % bestTranscribed,
+            fontsize=imp["fontSize"],
+            horizontalalignment="center",
+            verticalalignment="center",
+            color=colour,
+        )
+        tidx += 1
+# Add the annual totals
+lft = leftAt(imp["totalsHeight"] / 2)
+for yri in range(10):
+    x = (
+        imp["monthsWidth"]
+        + (yri + 0.5) * (1.0 - imp["meansWidth"] - imp["monthsWidth"]) / 10
+    )
+    tp = topAt(x)
+    inr = 0.0
+    for dgi in range(4):
+        originalDigit = numpy.where(orig[0, tidx, :] == 1.0)[0]
+        dgProbabilities = trnb[0, tidx, :]
+        bestTranscribed = numpy.where(
+            dgProbabilities == numpy.amax(dgProbabilities)
+        )[0]
+        colour = "red"
+        if bestTranscribed == originalDigit:
+            colour = "blue"
+        ax_encoded.text(
+            tp[0] - 0.0225 + dgi * 0.015,
+            lft[1],
+            "%1d" % bestTranscribed,
+            fontsize=imp["fontSize"],
+            horizontalalignment="center",
+            verticalalignment="center",
+            color=colour,
+        )
+        tidx += 1
 
 # Render the figure as a png
 fig.savefig("compare.png")

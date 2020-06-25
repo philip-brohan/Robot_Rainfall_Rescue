@@ -17,12 +17,12 @@ from makeDataset import getNumbersDataset
 
 # How many images to use?
 nTrainingImages = 9000  # Max is 9000
-nTestImages = 1000  # Max is 1000
+nTestImages = 100  # Max is 1000
 
 # How many epochs to train for
-nEpochs = 200
+nEpochs = 100
 # Length of an epoch - if None, same as nTrainingImages
-nImagesInEpoch = 1000
+nImagesInEpoch = None
 
 if nImagesInEpoch is None:
     nImagesInEpoch = nTrainingImages
