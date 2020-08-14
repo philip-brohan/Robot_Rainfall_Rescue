@@ -1,4 +1,4 @@
-# Make tf.data.Datasets from the random plain fake image tensors and numbers tensors
+# Make tf.data.Datasets from the rainfall rescue image tensors and numbers tensors
 
 import os
 import tensorflow as tf
@@ -8,7 +8,7 @@ import numpy
 def load_image_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [1024, 768, 3])
+    imt = tf.reshape(imt, [1024, 640, 3])
     return imt
 
 
@@ -16,7 +16,7 @@ def load_image_tensor(file_name):
 def load_numbers_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [436, 10])
+    imt = tf.reshape(imt, [520, 11])
     return imt
 
 
@@ -24,15 +24,13 @@ def load_numbers_tensor(file_name):
 #  Optionally specify how many images to use.
 def getImageDataset(purpose="training", nImages=None):
 
-    # Get a list of filenames containing image tensors
-    inFiles = os.listdir(
-        "%s/ML_ten_year_rainfall/fakes/plain/tensors/images" % os.getenv("SCRATCH")
+    baseD = "%s/ML_ten_year_rainfall/tensors/images/%s" % (
+        os.getenv("SCRATCH"),
+        purpose,
     )
-    splitI = int(len(inFiles) * 0.9)
-    if purpose == "training":
-        inFiles = inFiles[:splitI]
-    if purpose == "test":
-        inFiles = inFiles[splitI:]
+
+    # Get a list of filenames containing image tensors
+    inFiles = sorted(os.listdir(baseD))
 
     if nImages is not None:
         if len(inFiles) >= nImages:
@@ -43,11 +41,7 @@ def getImageDataset(purpose="training", nImages=None):
             )
 
     # Create TensorFlow Dataset object from the file namelist
-    inFiles = [
-        "%s/ML_ten_year_rainfall/fakes/plain/tensors/images/%s"
-        % (os.getenv("SCRATCH"), x)
-        for x in inFiles
-    ]
+    inFiles = ["%s/%s" % (baseD, x) for x in inFiles]
     tr_data = tf.data.Dataset.from_tensor_slices(tf.constant(inFiles))
 
     # Convert the Dataset from file names to file contents
@@ -64,15 +58,13 @@ def getImageDataset(purpose="training", nImages=None):
 #  Optionally specify how many images to use.
 def getNumbersDataset(purpose="training", nImages=None):
 
-    # Get a list of filenames containing numbers tensors
-    inFiles = os.listdir(
-        "%s/ML_ten_year_rainfall/fakes/plain/tensors/numbers" % os.getenv("SCRATCH")
+    baseD = "%s/ML_ten_year_rainfall/tensors/numbers/%s" % (
+        os.getenv("SCRATCH"),
+        purpose,
     )
-    splitI = int(len(inFiles) * 0.9)
-    if purpose == "training":
-        inFiles = inFiles[:splitI]
-    if purpose == "test":
-        inFiles = inFiles[splitI:]
+
+    # Get a list of filenames containing numbers tensors
+    inFiles = sorted(os.listdir(baseD))
 
     if nImages is not None:
         if len(inFiles) >= nImages:
@@ -84,9 +76,7 @@ def getNumbersDataset(purpose="training", nImages=None):
 
     # Create TensorFlow Dataset object from the file namelist
     inFiles = [
-        "%s/ML_ten_year_rainfall/fakes/plain/tensors/numbers/%s"
-        % (os.getenv("SCRATCH"), x)
-        for x in inFiles
+        "%s/ML_ATB2/tensors/numbers/%s" % (os.getenv("SCRATCH"), x) for x in inFiles
     ]
     tr_data = tf.data.Dataset.from_tensor_slices(tf.constant(inFiles))
 
