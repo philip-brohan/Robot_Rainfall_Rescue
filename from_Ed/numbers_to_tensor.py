@@ -28,6 +28,13 @@ if args.opfile is None:
         args.filen[:-4],
     )
 
+# Pad transcribed values so they are in form %5.2f ('ab.cd')
+def reformatNumber(mv):
+    if len(mv) == 0:
+        return "  .  "
+    return "%5.2f" % float(mv)
+
+
 # Load the numbers
 numbers = []
 with open(
@@ -43,11 +50,7 @@ with open(
     # Add the monthly precip
     for mi in range(12):
         for yi in range(1, 11):
-            mv = csvl[5 + mi][yi]
-            if len(mv) == 0:
-                mv = "  .  "
-            if len(mv) == 4:
-                mv = " %s" % mv
+            mv = reformatNumber(csvl[5 + mi][yi])
             for di in (0, 1, 3, 4):
                 numbers.append(mv[di])
 
