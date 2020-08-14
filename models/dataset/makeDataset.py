@@ -76,7 +76,7 @@ def getNumbersDataset(purpose="training", nImages=None):
 
     # Create TensorFlow Dataset object from the file namelist
     inFiles = [
-        "%s/ML_ATB2/tensors/numbers/%s" % (os.getenv("SCRATCH"), x) for x in inFiles
+        "%s/%s" % (baseD, x) for x in inFiles
     ]
     tr_data = tf.data.Dataset.from_tensor_slices(tf.constant(inFiles))
 
