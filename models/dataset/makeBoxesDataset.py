@@ -1,5 +1,12 @@
 # Make tf.data.Datasets from the ATB2 fake data
 
+# Note - there is a bug in tensorFlow (#24520) which means you have to explicitly set
+#  the shape of a tensor after reading it in.
+# Until this is fixed the tensor sizes are explicitly set in these functions
+#  which means we need a new script file for every input shape.
+
+# The tf.reshape lines are the only things that change between versions.
+
 import os
 import tensorflow as tf
 import numpy
@@ -8,7 +15,7 @@ import numpy
 def load_image_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [1024, 640, 1])
+    imt = tf.reshape(imt, [36, 48, 3])
     return imt
 
 
@@ -24,7 +31,7 @@ def load_standardised_tensor(file_name):
 def load_numbers_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [436, 10])
+    imt = tf.reshape(imt, [3, 10])
     return imt
 
 
@@ -32,21 +39,12 @@ def load_numbers_tensor(file_name):
 def load_corners_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [44])
-    return imt
-
-
-# Load a grid tensor from a file
-def load_grid_tensor(file_name):
-    sict = tf.io.read_file(file_name)
-    imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [240])
+    imt = tf.reshape(imt, [8])
     return imt
 
 
 load_functions = {
     "corners": load_corners_tensor,
-    "cell-centres": load_grid_tensor,
     "numbers": load_numbers_tensor,
     "images": load_image_tensor,
     "standardised": load_standardised_tensor,
@@ -55,18 +53,15 @@ load_functions = {
 
 def dirBase(subdir):
     if subdir is None:
-        return "%s/ML_ten_year_rainfall/training_data" % os.getenv("SCRATCH")
+        return "%s/ML_ATB2" % os.getenv("SCRATCH")
     else:
-        return "%s/ML_ten_year_rainfall/training_data/%s" % (
-            os.getenv("SCRATCH"),
-            subdir,
-        )
+        return "%s/ML_ATB2/%s" % (os.getenv("SCRATCH"), subdir)
 
 
 # Get a dataset - images, numbers, corners, or standardised images
 def getDataset(group, purpose, selection=None, nImages=None, subdir=None):
 
-    supported = ("images", "numbers", "corners", "cell-centres", "standardised")
+    supported = ("images", "numbers", "corners", "standardised")
     if group not in supported:
         raise ValueError("group must be one of %r." % supported)
 
@@ -124,13 +119,6 @@ def getCornersDataset(purpose="training", selection=None, nImages=None, subdir=N
 
     return getDataset(
         "corners", purpose, selection=selection, nImages=nImages, subdir=subdir
-    )
-
-
-def getGridDataset(purpose="training", selection=None, nImages=None, subdir=None):
-
-    return getDataset(
-        "cell-centres", purpose, selection=selection, nImages=nImages, subdir=subdir
     )
 
 
