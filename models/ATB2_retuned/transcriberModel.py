@@ -17,7 +17,7 @@ class transcriberModel(tf.keras.Model):
         super(transcriberModel, self).__init__()
         # Initial shape (1024,640,3)
         self.conv1A = tf.keras.layers.Conv2D(
-            10,
+            80,
             (3, 3),
             strides=(2, 2),
             padding="valid",
@@ -26,7 +26,7 @@ class transcriberModel(tf.keras.Model):
         self.act1A = tf.keras.layers.ELU()
         # Now (512,320,10)
         self.conv1B = tf.keras.layers.Conv2D(
-            10,
+            80,
             (3, 3),
             strides=(2, 2),
             padding="valid",
@@ -35,7 +35,7 @@ class transcriberModel(tf.keras.Model):
         self.act1B = tf.keras.layers.ELU()
         # Now (256,160,10)
         self.conv1C = tf.keras.layers.Conv2D(
-            20,
+            80,
             (3, 3),
             strides=(2, 2),
             padding="valid",
@@ -44,7 +44,7 @@ class transcriberModel(tf.keras.Model):
         self.act1C = tf.keras.layers.ELU()
         # Now (128,40,20)
         self.conv1D = tf.keras.layers.Conv2D(
-            40,
+            80,
             (3, 3),
             strides=(2, 2),
             padding="valid",
@@ -65,7 +65,7 @@ class transcriberModel(tf.keras.Model):
         self.flatten = tf.keras.layers.Flatten()
         # map directly to output format (520 digits)
         self.map_to_op = tf.keras.layers.Dense(
-            520 * 11, kernel_regularizer=tf.keras.regularizers.l1(0.000001)
+            520 * 11, kernel_regularizer=tf.keras.regularizers.l1(0.0000001)
         )
         # softmax to get digit probabilities at each location
         self.op_reshape = tf.keras.layers.Reshape(target_shape=(520, 11,))

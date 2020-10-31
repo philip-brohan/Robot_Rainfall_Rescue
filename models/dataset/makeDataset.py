@@ -101,6 +101,7 @@ def getDataset(group, purpose, selection=None, nImages=None, subdir=None):
         load_functions[group], num_parallel_calls=tf.data.experimental.AUTOTUNE
     )
     # Optimisation
+    tr_data = tr_data.cache()
     tr_data = tr_data.prefetch(tf.data.experimental.AUTOTUNE)
 
     return tr_data

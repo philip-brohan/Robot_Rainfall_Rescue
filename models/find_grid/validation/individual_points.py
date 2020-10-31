@@ -82,7 +82,8 @@ ax_original.set_xlim([0, 640])
 ax_original.set_ylim([1024, 0])
 ax_original.set_aspect("auto")
 ax_original.imshow(
-    tf.reshape(originalImage, [1024, 640, 1]),
+    tf.reshape(originalImage, [1024, 640]),
+    cmap='gray', vmin=0, vmax=1,
     aspect="auto",
     origin="upper",
     interpolation="nearest",
@@ -106,7 +107,8 @@ ax_encoded.set_axis_off()
 ax_original.set_xlim([0, 640])
 ax_original.set_ylim([1024, 0])
 ax_encoded.imshow(
-    tf.reshape(originalImage, [1024, 640, 1]),
+    tf.reshape(originalImage, [1024, 640]),
+    cmap='gray', vmin=0, vmax=1,
     aspect="auto",
     origin="upper",
     interpolation="nearest",

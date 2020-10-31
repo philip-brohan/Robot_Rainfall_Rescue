@@ -29,7 +29,7 @@ if nImagesInEpoch is None:
     nImagesInEpoch = nTrainingImages
 
 # Dataset parameters
-bufferSize = 100  # Shouldn't make much difference
+bufferSize = nTrainingImages # Random order
 batchSize = 1  # Bigger is faster, but takes more memory, and probably is less accurate
 
 # Set up the training data
