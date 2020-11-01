@@ -8,7 +8,7 @@ import numpy
 def load_image_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
-    imt = tf.reshape(imt, [1024, 640, 3])
+    imt = tf.reshape(imt, [1024, 640, 1])
     return imt
 
 
