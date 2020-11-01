@@ -90,11 +90,34 @@ def bottomRight(self):
     )
 
 
+def topAt(self, x):
+    return (
+        topRight(self)[0] * x + topLeft(self)[0] * (1 - x),
+        topRight(self)[1] * x + topLeft(self)[1] * (1 - x),
+    )
+
+
+def leftAt(self, y):
+    return (
+        topLeft(self)[0] * y + bottomLeft(self)[0] * (1 - y),
+        topLeft(self)[1] * y + bottomLeft(self)[1] * (1 - y),
+    )
+
+
 target = []
-target.extend(gRotate(mdata, topLeft(mdata)))
-target.extend(gRotate(mdata, topRight(mdata)))
-target.extend(gRotate(mdata, bottomLeft(mdata)))
-target.extend(gRotate(mdata, bottomRight(mdata)))
+for yrl in range(0, 11):
+    x = topAt(
+        mdata,
+        mdata.monthsWidth + yrl * (1.0 - mdata.meansWidth - mdata.monthsWidth) / 10,
+    )
+    y = leftAt(mdata, 1.0 - mdata.yearHeight)
+    tp = gRotate(mdata, [x[0], y[1]])
+    target.extend(tp)
+    y = leftAt(mdata, mdata.totalsHeight)
+    tp = gRotate(mdata, [x[0], y[1]])
+    target.extend(tp)
+
+
 ict = tf.convert_to_tensor(target, numpy.float32)
 
 # Output the tensor
