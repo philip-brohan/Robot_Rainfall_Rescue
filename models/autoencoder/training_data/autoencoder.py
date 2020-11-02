@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Convolutional autoencoder for ten-year rainfall images.
+# Convolutional autoencoder for ten-year rainfall training images.
 
 import os
 import sys
@@ -8,16 +8,28 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 import pickle
 import numpy
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--epoch", help="Restart from epoch", type=int, required=False, default=0
+)
+args = parser.parse_args()
+
+# Distribute across all GPUs
+strategy = tf.distribute.MirroredStrategy()
 
 # Load the model specification
+sys.path.append("%s/.." % os.path.dirname(__file__))
 from autoencoderModel import autoencoderModel
 
 # Load the data source provider
+sys.path.append("%s/../../dataset" % os.path.dirname(__file__))
 from makeDataset import getImageDataset
 
 # How many images to use?
-nTrainingImages = 31823  # Max is 31823
-nTestImages = 353  # Max is 3535
+nTrainingImages = 9000  # Max is 9000
+nTestImages = 1000  # Max is 1000
 
 # How many epochs to train for
 nEpochs = 200
@@ -28,8 +40,8 @@ if nImagesInEpoch is None:
     nImagesInEpoch = nTrainingImages
 
 # Dataset parameters
-bufferSize = 100  # Shouldn't make much difference
-batchSize = 10  # Bigger is faster, but takes more memory, and probably is less accurate
+bufferSize = 1000  # Shouldn't make much difference
+batchSize = 32  # Arbitrary
 
 # Set up the training data
 trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
@@ -42,7 +54,23 @@ testData = tf.data.Dataset.zip((testData, testData))
 testData = testData.batch(batchSize)
 
 # Instantiate the model
-autoencoder = autoencoderModel()
+with strategy.scope():
+    autoencoder = autoencoderModel()
+    autoencoder.compile(
+        optimizer=tf.keras.optimizers.Adadelta(
+            learning_rate=1.0, rho=0.95, epsilon=1e-07, name="Adadelta"
+        ),
+        loss="mean_squared_error",
+    )
+    # If we are doing a restart, load the weights
+    if args.epoch > 0:
+        weights_dir = (
+            "%s/ML_ten_year_rainfall/models/autoencoder/training/" + "Epoch_%04d"
+        ) % (os.getenv("SCRATCH"), args.epoch - 1,)
+        load_status = autoencoder.load_weights("%s/ckpt" % weights_dir)
+        # Check the load worked
+        load_status.assert_existing_objects_matched()
+
 
 # Save the model weights and the history state after every epoch
 history = {}
@@ -52,10 +80,9 @@ history["val_loss"] = []
 
 class CustomSaver(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        save_dir = ("%s/ML_ten_year_rainfall/autoencoder/" + "Epoch_%04d") % (
-            os.getenv("SCRATCH"),
-            epoch,
-        )
+        save_dir = (
+            "%s/ML_ten_year_rainfall/models/autoencoder/training/" + "Epoch_%04d"
+        ) % (os.getenv("SCRATCH"), epoch,)
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         self.model.save_weights("%s/ckpt" % save_dir)
@@ -73,12 +100,6 @@ class ReduceNoise(tf.keras.callbacks.Callback):
 
 
 # Train the autoencoder
-autoencoder.compile(
-    optimizer=tf.keras.optimizers.Adadelta(
-        learning_rate=1.0, rho=0.95, epsilon=1e-07, name="Adadelta"
-    ),
-    loss="mean_squared_error",
-)
 history = autoencoder.fit(
     x=trainingData,
     epochs=nEpochs,

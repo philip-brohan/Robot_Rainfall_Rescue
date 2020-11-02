@@ -21,11 +21,11 @@ for idx in range(10000):
     fontFamily = random.choice(fontNames)
     fontStyle = random.choice(["normal", "italic", "oblique"])
     fontWeight = random.choice(["normal", "bold", "light"])
-    fontSize = 12
+    fontSize = 11
     if fontFamily in fontScales:
         fontSize *= fontScales[fontFamily]
-    xshift = random.randint(-10, 10)
-    yshift = random.randint(-20, 20)
+    xshift = random.randint(-30, 30)
+    yshift = random.randint(-250, 250)
     xscale = random.normalvariate(1, 0.03)
     yscale = random.normalvariate(1, 0.03)
     rotate = random.normalvariate(0, 3)

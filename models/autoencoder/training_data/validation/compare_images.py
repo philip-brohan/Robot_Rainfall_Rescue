@@ -14,8 +14,10 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
-sys.path.append("%s/../" % os.path.dirname(__file__))
+sys.path.append("%s/../../" % os.path.dirname(__file__))
 from autoencoderModel import autoencoderModel
+
+sys.path.append("%s/../../../dataset" % os.path.dirname(__file__))
 from makeDataset import getImageDataset
 
 import argparse
@@ -29,10 +31,9 @@ args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
 autoencoder = autoencoderModel()
-weights_dir = ("%s/ML_ten_year_rainfall/autoencoder/" + "Epoch_%04d") % (
-    os.getenv("SCRATCH"),
-    args.epoch - 1,
-)
+weights_dir = (
+    "%s/ML_ten_year_rainfall/models/autoencoder/training/" + "Epoch_%04d"
+) % (os.getenv("SCRATCH"), args.epoch - 1,)
 load_status = autoencoder.load_weights("%s/ckpt" % weights_dir)
 # Check the load worked
 load_status.assert_existing_objects_matched()
@@ -66,12 +67,22 @@ ax_full.add_patch(
 # Original
 ax_original = fig.add_axes([0.02, 0.015, 0.47, 0.97])
 ax_original.set_axis_off()
-ax_original.matshow(tf.reshape(original, [1024, 768, 3]))
+ax_original.imshow(tf.reshape(original, [1024, 640]),
+    cmap='gray', vmin=0, vmax=1,
+    aspect="auto",
+    origin="upper",
+    interpolation="nearest",
+)
 
 # Encoded
 ax_encoded = fig.add_axes([0.51, 0.015, 0.47, 0.97])
 ax_encoded.set_axis_off()
-ax_encoded.matshow(tf.reshape(encoded, [1024, 768, 3]))
+ax_encoded.imshow(tf.reshape(encoded, [1024, 640]),
+    cmap='gray', vmin=0, vmax=1,
+    aspect="auto",
+    origin="upper",
+    interpolation="nearest",
+)
 
 # Render the figure as a png
 fig.savefig("compare.png")
