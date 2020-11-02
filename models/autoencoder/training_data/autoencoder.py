@@ -32,9 +32,9 @@ nTrainingImages = 9000  # Max is 9000
 nTestImages = 1000  # Max is 1000
 
 # How many epochs to train for
-nEpochs = 200
+nEpochs = 500
 # Length of an epoch - if None, same as nTrainingImages
-nImagesInEpoch = 1000
+nImagesInEpoch = 9000
 
 if nImagesInEpoch is None:
     nImagesInEpoch = nTrainingImages
