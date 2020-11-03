@@ -18,9 +18,9 @@ from matplotlib.lines import Line2D
 sys.path.append("%s/../" % os.path.dirname(__file__))
 from transcriberModel import transcriberModel
 
-sys.path.append("%s/../../dataset" % os.path.dirname(__file__))
-from makeDataset import getImageDataset
-from makeDataset import getNumbersDataset
+sys.path.append("%s/../../../dataset" % os.path.dirname(__file__))
+from makeRRDataset import getImageDataset
+from makeRRDataset import getNumbersDataset
 
 import argparse
 
@@ -39,7 +39,7 @@ args = parser.parse_args()
 # Set up the model and load the weights at the chosen epoch
 transcriber = transcriberModel()
 weights_dir = (
-    "%s/ML_ten_year_rainfall/models/ATB2_tuned_transcriber/" + "Epoch_%04d"
+    "%s/ML_ten_year_rainfall/models/transcriber_full_page/original/" + "Epoch_%04d"
 ) % (os.getenv("SCRATCH"), args.epoch - 1,)
 load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 # Check the load worked
@@ -54,7 +54,7 @@ pmatrix = numpy.zeros((11, 11))
 for testCase in testData:
     image = testCase[0]
     orig = testCase[1]
-    encoded = transcriber(tf.reshape(image, [1, 1024, 640, 3]), training=False)
+    encoded = transcriber(tf.reshape(image, [1, 1024, 640, 1]), training=False)
     for tidx in range(orig.shape[0]):
         originalDigit = numpy.where(orig[tidx, :] == 1.0)[0]
         dgProbabilities = encoded[0, tidx, :]
