@@ -22,7 +22,6 @@ sys.path.append("%s/../../../dataset" % os.path.dirname(__file__))
 from makeDataset import getImageDataset
 from makeDataset import getNumbersDataset
 
-sys.path.append("%s/../../../../training_data/whole_image/" % os.path.dirname(__file__))
 from tyrImage import tyrImage
 
 import argparse
