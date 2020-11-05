@@ -15,7 +15,7 @@ class discriminatorModel(tf.keras.Model):
         super(discriminatorModel, self).__init__()
         # Initial shape (1024,640,1)
         self.conv1A = tf.keras.layers.Conv2D(
-            80,
+            10,
             (3, 3),
             strides=(2, 2),
             padding="same",
@@ -24,7 +24,7 @@ class discriminatorModel(tf.keras.Model):
         self.drop1A = tf.keras.layers.Dropout(0.3)
         # Now (512,320,80)
         self.conv1B = tf.keras.layers.Conv2D(
-            40,
+            10,
             (3, 3),
             strides=(2, 2),
             padding="same",
@@ -33,7 +33,7 @@ class discriminatorModel(tf.keras.Model):
         self.drop1B = tf.keras.layers.Dropout(0.3)
         # Now (256,160,40)
         self.conv1C = tf.keras.layers.Conv2D(
-            20,
+            10,
             (3, 3),
             strides=(2, 2),
             padding="same",

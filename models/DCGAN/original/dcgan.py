@@ -18,6 +18,7 @@ args = parser.parse_args()
 strategy = tf.distribute.MirroredStrategy()
 
 # Load the model specification
+sys.path.append("%s/.." % os.path.dirname(__file__))
 from generatorModel import generatorModel, generatorLoss, generatorOptimizer
 from discriminatorModel import (
     discriminatorModel,
@@ -43,8 +44,13 @@ bufferSize = nTrainingImages
 batchSize = 32
 
 # Set up the training data
-trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
+trainingData = getImageDataset(purpose="training", nImages=nTrainingImages)
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
+
+# Instantiate the models
+with strategy.scope():
+    generator = generatorModel()
+    discriminator = discriminatorModel()
 
 # Specify what to save at a checkpoint
 checkpoint = tf.train.Checkpoint(
@@ -53,23 +59,19 @@ checkpoint = tf.train.Checkpoint(
     generator=generator,
     discriminator=discriminator,
 )
-
-# Instantiate the models
-with strategy.scope():
-    generator = generatorModel()
-    discriminator = discriminatorModel()
-    # If we are doing a restart, load from checkpoint
-    if args.epoch > 0:
-        save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original/Epoch_%04d/ckpt") % (
-            os.getenv("SCRATCH"),
-            epoch,
-        )
-        status = checkpoint.restore(tf.train.latest_checkpoint(save_dir))
+    
+# If we are doing a restart, load from checkpoint
+if args.epoch > 0:
+    save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original/Epoch_%04d") % (
+        os.getenv("SCRATCH"),
+        args.epoch-1,
+    )
+    status = checkpoint.restore(tf.train.latest_checkpoint(save_dir))
 
 # Explicit training loop
 @tf.function
 def trainStep(images):
-    noise = tf.random.normal([batchSize, latentDim])
+    noise = tf.random.normal([batchSize, 16*10*512])
 
     with tf.GradientTape() as genTape, tf.GradientTape() as discTape:
         generatedImages = generator(noise, training=True)
@@ -101,7 +103,7 @@ def train(dataset, epochs):
             trainStep(imageBatch)
 
         # Save the model every epoch
-        save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original" + "Epoch_%04d") % (
+        save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original/Epoch_%04d") % (
             os.getenv("SCRATCH"),
             epoch,
         )

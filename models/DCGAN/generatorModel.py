@@ -72,7 +72,7 @@ class generatorModel(tf.keras.Model):
         # Now (1024,640,1)
 
     def call(self, inputs):
-        x = self.unflatten(x)
+        x = self.unflatten(inputs)
         x = self.conv1A(x)
         x = self.norm1A(x)
         x = self.conv1B(x)
