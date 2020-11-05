@@ -6,6 +6,16 @@ import os
 import sys
 import time
 import tensorflow as tf
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--epoch", help="Restart from epoch", type=int, required=False, default=0
+)
+args = parser.parse_args()
+
+# Distribute across all GPUs
+strategy = tf.distribute.MirroredStrategy()
 
 # Load the model specification
 from generatorModel import generatorModel, generatorLoss, generatorOptimizer
@@ -15,9 +25,9 @@ from discriminatorModel import (
     discriminatorOptimizer,
 )
 
-# Load the data source provider - same as the autoencoder
-sys.path.append("%s/../autoencoder" % os.path.dirname(__file__))
-from makeDataset import getImageDataset
+# Load the data source provider
+sys.path.append("%s/../../dataset" % os.path.dirname(__file__))
+from makeRRDataset import getImageDataset
 
 # How many epochs to train for
 nEpochs = 500
@@ -26,19 +36,15 @@ nEpochs = 500
 latentDim = 100
 
 # How many images to use?
-nTrainingImages = 31823  # Max is 31823
+nTrainingImages = 11686  # Max is 11686
 
 # Dataset parameters
-bufferSize = 100  # Shouldn't make much difference
-batchSize = 32  # Big enough for a variety of discriminator results
+bufferSize = nTrainingImages
+batchSize = 32
 
 # Set up the training data
-trainingData = getImageDataset(purpose="training", nImages=nTrainingImages)
+trainingData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
-
-# Instantiate the models
-generator = generatorModel()
-discriminator = discriminatorModel()
 
 # Specify what to save at a checkpoint
 checkpoint = tf.train.Checkpoint(
@@ -48,6 +54,17 @@ checkpoint = tf.train.Checkpoint(
     discriminator=discriminator,
 )
 
+# Instantiate the models
+with strategy.scope():
+    generator = generatorModel()
+    discriminator = discriminatorModel()
+    # If we are doing a restart, load from checkpoint
+    if args.epoch > 0:
+        save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original/Epoch_%04d/ckpt") % (
+            os.getenv("SCRATCH"),
+            epoch,
+        )
+        status = checkpoint.restore(tf.train.latest_checkpoint(save_dir))
 
 # Explicit training loop
 @tf.function
@@ -84,7 +101,7 @@ def train(dataset, epochs):
             trainStep(imageBatch)
 
         # Save the model every epoch
-        save_dir = ("%s/ML_ten_year_rainfall/dcgan/" + "Epoch_%04d") % (
+        save_dir = ("%s/ML_ten_year_rainfall/models/DCGAN/original" + "Epoch_%04d") % (
             os.getenv("SCRATCH"),
             epoch,
         )
