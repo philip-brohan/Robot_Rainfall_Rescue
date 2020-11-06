@@ -22,58 +22,42 @@ class encoderModel(tf.keras.Model):
         super(encoderModel, self).__init__()
         # Initial shape (1024,640,1)
         self.conv1A = tf.keras.layers.Conv2D(
-            16, (3, 3), strides=(2, 2), padding="valid"
+            16, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1A = tf.keras.layers.ELU()
         # Now (512,320,16)
         self.conv1B = tf.keras.layers.Conv2D(
-            32, (3, 3), strides=(2, 2), padding="valid"
+            32, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1B = tf.keras.layers.ELU()
         # Now (256,160,32)
         self.conv1C = tf.keras.layers.Conv2D(
-            64, (3, 3), strides=(2, 2), padding="valid"
+            64, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1C = tf.keras.layers.ELU()
         # Now (128,80,64)
         self.conv1D = tf.keras.layers.Conv2D(
-            128, (3, 3), strides=(2, 2), padding="valid"
+            128, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1D = tf.keras.layers.ELU()
         # Now (64,40,128)
-        self.conv1E = tf.keras.layers.Conv2D(
-            256, (3, 3), strides=(2, 2), padding="valid"
-        )
-        self.act1E = tf.keras.layers.ELU()
-        # Now (32,20,256)
-        self.conv1F = tf.keras.layers.Conv2D(
-            512, (3, 3), strides=(2, 2), padding="valid"
-        )
-        self.act1F = tf.keras.layers.ELU()
-        # Now (16,10,512)
         # reshape to 1d
         self.flatten = tf.keras.layers.Flatten()
         # reduce to latent space size
-        self.pack_to_l = tf.keras.layers.Dense(latent_dim,)
+        self.dense1 = tf.keras.layers.Dense(latent_dim,
+            activation=tf.keras.activations.elu)
+        # Normalise
+        self.bnf = tf.keras.layers.BatchNormalization()
+
 
     def call(self, inputs):
         x = self.conv1A(inputs)
-        x = self.act1A(x)
         x = self.conv1B(x)
-        x = self.act1B(x)
         x = self.conv1C(x)
-        x = self.act1C(x)
         x = self.conv1D(x)
-        x = self.act1D(x)
-        x = self.conv1E(x)
-        x = self.act1E(x)
-        x = self.conv1F(x)
-        x = self.act1F(x)
         x = self.flatten(x)
-        x = self.pack_to_l(x)
-        # Normalise latent space to mean=0, sd=1
-        x = x - K.mean(x)
-        x = x / K.std(x)
+        x = self.dense1(x)
+        x = self.bnf(x)
         return x
 
 
@@ -82,54 +66,39 @@ class generatorModel(tf.keras.Model):
     def __init__(self):
         # parent constructor
         super(generatorModel, self).__init__()
+        # Deconvolution starts at (64,40,512)
         # reshape latent space as 3d seed for deconvolution
-        self.unpack_from_l = tf.keras.layers.Dense(16 * 10 * 512,)
-        self.unflatten = tf.keras.layers.Reshape(target_shape=(16, 10, 512,))
-        # Starts at (16,10,512)
-        self.conv1A = tf.keras.layers.Conv2DTranspose(
-            256, (3, 3), strides=(2, 2), padding="same"
-        )
-        self.act1A = tf.keras.layers.ELU()
-        # Now (32,20,256)
-        self.conv1B = tf.keras.layers.Conv2DTranspose(
-            128, (3, 3), strides=(2, 2), padding="same"
-        )
-        self.act1B = tf.keras.layers.ELU()
-        # Now (64,40,128)
-        self.conv1C = tf.keras.layers.Conv2DTranspose(
-            64, (3, 3), strides=(2, 2), padding="same"
-        )
-        self.act1C = tf.keras.layers.ELU()
-        # Now (128,80,64)
+        self.unpack_from_l = tf.keras.layers.Dense(64 * 40 * 128,
+            activation=tf.keras.activations.elu)
+        self.unflatten = tf.keras.layers.Reshape(target_shape=(64, 40, 128,))
         self.conv1D = tf.keras.layers.Conv2DTranspose(
-            32, (3, 3), strides=(2, 2), padding="same"
+            64, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1D = tf.keras.layers.ELU()
+        # Now (128,80,64)
+        self.conv1C = tf.keras.layers.Conv2DTranspose(
+            32, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
+        )
         # Now (256,160,32)
-        self.conv1E = tf.keras.layers.Conv2DTranspose(
-            16, (3, 3), strides=(2, 2), padding="same"
+        self.conv1B = tf.keras.layers.Conv2DTranspose(
+            16, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
-        self.act1E = tf.keras.layers.ELU()
         # Now (512,320,16)
-        self.conv1F = tf.keras.layers.Conv2DTranspose(
-            1, (3, 3), strides=(2, 2), padding="same"
+        self.conv1A = tf.keras.layers.Conv2DTranspose(
+            1, (3, 3), strides=(2, 2), padding="same",
+            activation=tf.keras.activations.elu
         )
         # Now back to (1024,640,1)
 
     def call(self, inputs):
         x = self.unpack_from_l(inputs)
         x = self.unflatten(x)
-        x = self.conv1A(x)
-        x = self.act1A(x)
-        x = self.conv1B(x)
-        x = self.act1B(x)
-        x = self.conv1C(x)
-        x = self.act1C(x)
         x = self.conv1D(x)
-        x = self.act1D(x)
-        x = self.conv1E(x)
-        x = self.act1E(x)
-        x = self.conv1F(x)
+        x = self.conv1C(x)
+        x = self.conv1B(x)
+        x = self.conv1A(x)
         return x
 
 
