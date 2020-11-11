@@ -26,7 +26,7 @@ class gridModel(tf.keras.Model):
             32, (3, 3), strides=(2, 2), padding="valid"
         )
         self.act1B = tf.keras.layers.ELU()
-        self.drop1b = tf.keras.layers.Dropout(0.3)
+        self.drop1B = tf.keras.layers.Dropout(0.3)
         self.conv1C = tf.keras.layers.Conv2D(
             16, (3, 3), strides=(2, 2), padding="valid"
         )
@@ -51,12 +51,13 @@ class gridModel(tf.keras.Model):
         self.flatten = tf.keras.layers.Flatten()
         # 2-layer output assesment
         self.map1 = tf.keras.layers.Dense(
-            56, kernel_regularizer=tf.keras.regularizers.l1(0.000001)
+            240,
         )
         self.actm1 = tf.keras.layers.ELU()
+        self.actm1d = tf.keras.layers.Dropout(0.5)
         # map directly to output format (240 coordinates)
         self.map_to_op = tf.keras.layers.Dense(
-            240, kernel_regularizer=tf.keras.regularizers.l1(0.000001)
+            240,
         )
         # Want float32 output even if using lower precision
         self.opl = tf.keras.layers.Activation("linear", dtype="float32")
@@ -66,11 +67,11 @@ class gridModel(tf.keras.Model):
         x = self.drop1A(x)
         x = self.act1A(x)
         x = self.conv1B(x)
-        x = self.drop1A(x)
+        x = self.drop1B(x)
         x = self.act1B(x)
-        x = self.conv1C(x)
-        x = self.drop1C(x)
-        x = self.act1C(x)
+        #x = self.conv1C(x)
+        #x = self.drop1C(x)
+        #x = self.act1C(x)
         # x = self.conv1D(x)
         # x = self.drop1D(x)
         # x = self.act1D(x)
@@ -83,6 +84,7 @@ class gridModel(tf.keras.Model):
         x = self.flatten(x)
         x = self.map1(x)
         x = self.actm1(x)
+        x = self.actm1d(x)
         x = self.map_to_op(x)
         x = self.opl(x)
         return x

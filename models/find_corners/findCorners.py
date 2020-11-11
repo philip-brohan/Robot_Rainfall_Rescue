@@ -32,7 +32,7 @@ nTrainingImages = 9000  # Max is 9000
 nTestImages = 1000  # Max is 1000
 
 # How many epochs to train for
-nEpochs = 500
+nEpochs = 700
 # Length of an epoch - if None, same as nTrainingImages
 nImagesInEpoch = 9000
 
@@ -60,9 +60,9 @@ with strategy.scope():
     seeker = cornerModel()
     seeker.compile(
         optimizer=tf.keras.optimizers.Adadelta(
-            learning_rate=1e-01, rho=0.95, epsilon=1e-07, name="Adadelta"
+            learning_rate=1e-03, rho=0.95, epsilon=1e-07, name="Adadelta"
         ),
-        loss=tf.keras.losses.MeanAbsoluteError(),
+        loss=tf.keras.losses.MeanSquaredError(),
     )
 
 # If we are doing a restart, load the weights

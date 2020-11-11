@@ -20,9 +20,9 @@ args = parser.parse_args()
 strategy = tf.distribute.MirroredStrategy()
 
 # Optimisation? - no, makes it slower
-# from tensorflow.keras.mixed_precision import experimental as mixed_precision
-# policy = mixed_precision.Policy('mixed_float16')
-# mixed_precision.set_policy(policy)
+from tensorflow.keras.mixed_precision import experimental as mixed_precision
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_policy(policy)
 
 # Load the data source providers
 sys.path.append("%s/../dataset" % os.path.dirname(__file__))
@@ -65,9 +65,9 @@ with strategy.scope():
     seeker = gridModel()
     seeker.compile(
         optimizer=tf.keras.optimizers.Adadelta(
-            learning_rate=1e-01, rho=0.95, epsilon=1e-07, name="Adadelta"
+            learning_rate=1e-02, rho=0.95, epsilon=1e-07, name="Adadelta"
         ),
-        loss=tf.keras.losses.MeanAbsoluteError(),
+        loss=tf.keras.losses.MeanSquaredError(),
     )
     # If we are doing a restart, load the weights
     if args.epoch > 0:

@@ -8,6 +8,12 @@ import numpy
 def load_image_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
+    # Threshold: 0 if < 0.75, 1 otherwise
+    imt = tf.where(
+        tf.less(imt, tf.zeros_like(imt) + 0.75),
+        tf.zeros_like(imt),
+        tf.ones_like(imt)
+    )
     imt = tf.reshape(imt, [1024, 640, 1])
     return imt
 

@@ -8,6 +8,12 @@ import numpy
 def load_image_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
+    # Threshold
+    imt=tf.where(
+        tf.less(imt, tf.zeros_like(imt) + 0.75),
+        tf.zeros_like(imt),
+        tf.ones_like(imt)
+    )
     imt = tf.reshape(imt, [1024, 640, 1])
     return imt
 
@@ -32,6 +38,7 @@ def load_numbers_tensor(file_name):
 def load_corners_tensor(file_name):
     sict = tf.io.read_file(file_name)
     imt = tf.io.parse_tensor(sict, numpy.float32)
+    #imt = imt[0:4]
     imt = tf.reshape(imt, [44])
     return imt
 
@@ -101,7 +108,7 @@ def getDataset(group, purpose, selection=None, nImages=None, subdir=None):
         load_functions[group], num_parallel_calls=tf.data.experimental.AUTOTUNE
     )
     # Optimisation
-    #tr_data = tr_data.cache()
+    tr_data = tr_data.cache()
     tr_data = tr_data.prefetch(tf.data.experimental.AUTOTUNE)
 
     return tr_data

@@ -29,6 +29,9 @@ class cornerModel(tf.keras.Model):
         self.drop1b = tf.keras.layers.Dropout(0.5)
         # reshape to 1d
         self.flatten = tf.keras.layers.Flatten()
+        self.moop1 = tf.keras.layers.Dense(100)
+        self.moop1a = tf.keras.layers.ELU()
+        self.moop1d = tf.keras.layers.Dropout(0.5)
         # map directly to output format (22 coordinates)
         self.map_to_op = tf.keras.layers.Dense(
             44,
@@ -42,5 +45,8 @@ class cornerModel(tf.keras.Model):
         x = self.drop1A(x)
         x = self.act1B(x)
         x = self.flatten(x)
+        x = self.moop1(x)
+        x = self.moop1a(x)
+        x = self.moop1d(x)
         x = self.map_to_op(x)
         return x
