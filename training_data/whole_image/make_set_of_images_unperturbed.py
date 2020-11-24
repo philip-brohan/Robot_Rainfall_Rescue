@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # Make 10,000 fake images, each with associated data file
-#  These images have a random perturbations in shift, scale, and rotation).
 
 import os
 import random
@@ -10,7 +9,7 @@ import random
 from fonts import fontNames
 from fonts import fontScales
 
-image_dir = "%s/Robot_Rainfall_Rescue/training_data" % os.getenv("SCRATCH")
+image_dir = "%s/Robot_Rainfall_Rescue/training_data_unperturbed/" % os.getenv("SCRATCH")
 
 f = open("run_mi.sh", "w+")
 
@@ -18,21 +17,21 @@ for idx in range(10000):
     fn = "%s/%04d.png" % (image_dir, idx)
     if os.path.exists(fn):
         continue
-    fontFamily = random.choice(fontNames)
-    fontStyle = random.choice(["normal", "italic", "oblique"])
-    fontWeight = random.choice(["normal", "bold", "light"])
-    fontSize = 11
+    fontFamily = "Arial"
+    fontStyle = "normal"
+    fontWeight = "normal"
+    fontSize = 10
     if fontFamily in fontScales:
         fontSize *= fontScales[fontFamily]
-    xshift = random.randint(-30, 30)
-    yshift = random.randint(-250, 250)
-    xscale = random.normalvariate(1, 0.03)
-    yscale = random.normalvariate(1, 0.03)
-    rotate = random.normalvariate(0, 3)
-    jitterFontRotate = random.normalvariate(0, 3)
-    jitterFontSize = random.normalvariate(0, 1)
-    jitterGridPoints = random.normalvariate(0, 0.001)
-    jitterLineWidth = random.normalvariate(0, 0.25)
+    xshift = 0
+    yshift = 0
+    xscale = 1
+    yscale = 1
+    rotate = 0
+    jitterFontRotate = 0
+    jitterFontSize = 0
+    jitterGridPoints = 0
+    jitterLineWidth = 0
     f.write(
         (
             './make_image_data_pair.py --opdir=%s --docn="%04d"'

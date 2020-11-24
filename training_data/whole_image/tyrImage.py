@@ -25,7 +25,7 @@ class tyrImage:
         self.yshift = 0.0  # pixels, +ve up
         self.rotate = 0.0  # degrees clockwise
         self.linewidth = 1.0
-        self.bgcolour = (1.0, 1.0, 1.0)
+        self.bgcolour = (0.9, 0.9, 0.9)
         self.fgcolour = (0.0, 0.0, 0.0)
         self.yearHeight = 0.066  # Fractional height of year row
         self.totalsHeight = 0.105  # Fractional height of totals row

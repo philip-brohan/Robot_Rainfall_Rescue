@@ -38,7 +38,7 @@ args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
 transcriber = transcriberModel()
-weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_retuned/" + "Epoch_%04d") % (
+weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/" + "Epoch_%04d") % (
     os.getenv("SCRATCH"),
     args.epoch - 1,
 )
@@ -55,7 +55,7 @@ pmatrix = numpy.zeros((10, 10))
 for testCase in testData:
     image = testCase[0]
     orig = testCase[1]
-    encoded = transcriber(tf.reshape(image, [1, 1024, 640, 1]), training=False)
+    encoded = transcriber(tf.reshape(image, [1, 1024, 768, 3]), training=False)
     for tidx in range(orig.shape[0]):
         originalDigit = numpy.where(orig[tidx, :] == 1.0)[0]
         dgProbabilities = encoded[0, tidx, :]

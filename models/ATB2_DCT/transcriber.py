@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Tuned transcriber for simplified training images.
+# Transcriber for simplified transfer-learning images.
 
 import os
 import sys
@@ -30,7 +30,7 @@ nTrainingImages = 9000  # Max is 9000
 nTestImages = 1000  # Max is 1000
 
 # How many epochs to train for
-nEpochs = 50
+nEpochs = 200
 # Length of an epoch - if None, same as nTrainingImages
 nImagesInEpoch = 1000
 
@@ -38,7 +38,7 @@ if nImagesInEpoch is None:
     nImagesInEpoch = nTrainingImages
 
 # Dataset parameters
-bufferSize = 100  # Random data, so order does not matter
+bufferSize = 100  # Shouldn't make much difference (data is random)
 batchSize = 32  # Arbitrary
 
 # Set up the training data
@@ -65,11 +65,9 @@ with strategy.scope():
     # If we are doing a restart, load the weights
     if args.epoch > 0:
         weights_dir = (
-            "%s/Robot_Rainfall_Rescue/models/ATB2_retuned/" + "Epoch_%04d"
-        ) % (
-            os.getenv("SCRATCH"),
-            args.epoch - 1,
-        )
+            "%s/Robot_Rainfall_Rescue/models/ATB2_DCT/"
+            + "Epoch_%04d"
+        ) % (os.getenv("SCRATCH"), args.epoch - 1,)
         load_status = seeker.load_weights("%s/ckpt" % weights_dir)
         # Check the load worked
         load_status.assert_existing_objects_matched()
@@ -82,10 +80,9 @@ history["val_loss"] = []
 
 class CustomSaver(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        save_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_retuned/" + "Epoch_%04d") % (
-            os.getenv("SCRATCH"),
-            epoch,
-        )
+        save_dir = (
+            "%s/Robot_Rainfall_Rescue/models/ATB2_DCT" + "Epoch_%04d"
+        ) % (os.getenv("SCRATCH"), epoch,)
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         self.model.save_weights("%s/ckpt" % save_dir)
@@ -95,6 +92,13 @@ class CustomSaver(tf.keras.callbacks.Callback):
         pickle.dump(history, open(history_file, "wb"))
 
 
+# Train the transcriber
+transcriber.compile(
+    optimizer=tf.keras.optimizers.Adadelta(
+        learning_rate=1.0, rho=0.95, epsilon=1e-07, name="Adadelta"
+    ),
+    loss=tf.keras.losses.CategoricalCrossentropy(),
+)
 history = transcriber.fit(
     x=trainingData,
     epochs=nEpochs,

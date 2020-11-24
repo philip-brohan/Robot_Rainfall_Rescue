@@ -1,0 +1,24 @@
+name: RRR
+channels:
+  - default
+dependencies:
+# Basics
+  - python=3.7
+  - matplotlib=3.2.*
+# ML model building 
+  - tensorflow=2.2.*
+# Image processing
+  - pillow=7.1.*
+# Allow packages only available via pip
+  - pip
+#
+# Optional below this
+#
+# Tensorflow diagnostics and profiling
+  - tensorboard=2.2.*
+  - pip:
+    - tensorboard_plugin_profile
+# Code formatter
+  - black=20.*
+# Documentation processor
+  - sphinx=3.*.*

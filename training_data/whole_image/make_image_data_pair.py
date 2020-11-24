@@ -65,7 +65,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 if args.opdir is None:
-    args.opdir = ("%s/ML_ten_year_rainfall/training_data/") % os.getenv("SCRATCH")
+    args.opdir = ("%s/Robot_Rainfall_Rescue/training_data/") % os.getenv("SCRATCH")
 
 # Pass all the image control options to image creation function
 a = vars(args)
