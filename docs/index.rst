@@ -62,7 +62,8 @@ Unfortunately it's not clear `how to select the right model <https://en.wikipedi
 .. toctree::
    :maxdepth: 2
 
-   Direct transcription of the simplified training dataset <models/index>
+   Direct transcription of the simplified training dataset <models/atb2>
+   Modelling the page layout <models/layout>
 
 
 ---------

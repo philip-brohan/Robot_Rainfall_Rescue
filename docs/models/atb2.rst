@@ -1,7 +1,7 @@
 Direct transcription of a simplified training dataset
 =====================================================
 
-First, let's find out how hard it is to train an ML model to transcribe the simplified training dataset: 
+First, let's find out how hard it is to train an ML model to transcribe the :doc:`simplified training dataset <../training_data/scripts>`: 
 
 .. toctree::
    :maxdepth: 1
