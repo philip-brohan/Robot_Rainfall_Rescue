@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Make 10,000 image::data pairs, with fixed fonts, orientation etc. &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Process Transfer-Learning training data into tensors for model building" href="../to_tensors.html" />
+    <link rel="prev" title="Make 10,000 image::data pairs, with different random perturbations each time" href="dataset.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../to_tensors.html" title="Process Transfer-Learning training data into tensors for model building"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="dataset.html" title="Make 10,000 image::data pairs, with different random perturbations each time"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../itp.html" >Transfer-learning images and data</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../scripts.html" accesskey="U">Scripts to make the transfer-learning training dataset</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Make 10,000 image::data pairs, with fixed fonts, orientation etc.</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="make-10-000-image-data-pairs-with-fixed-fonts-orientation-etc">
+<h1>Make 10,000 image::data pairs, with fixed fonts, orientation etc.<a class="headerlink" href="#make-10-000-image-data-pairs-with-fixed-fonts-orientation-etc" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="c1"># Make 10,000 fake images, each with associated data file</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="c1"># Get the list of fonts to use</span>
+<span class="kn">from</span> <span class="nn">fonts</span> <span class="kn">import</span> <span class="n">fontNames</span>
+<span class="kn">from</span> <span class="nn">fonts</span> <span class="kn">import</span> <span class="n">fontScales</span>
+
+<span class="n">image_dir</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/Robot_Rainfall_Rescue/training_data_unperturbed/&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;run_mi.sh&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%04d</span><span class="s2">.png&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="k">continue</span>
+    <span class="n">fontFamily</span> <span class="o">=</span> <span class="s2">&quot;Arial&quot;</span>
+    <span class="n">fontStyle</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span>
+    <span class="n">fontWeight</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span>
+    <span class="n">fontSize</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">if</span> <span class="n">fontFamily</span> <span class="ow">in</span> <span class="n">fontScales</span><span class="p">:</span>
+        <span class="n">fontSize</span> <span class="o">*=</span> <span class="n">fontScales</span><span class="p">[</span><span class="n">fontFamily</span><span class="p">]</span>
+    <span class="n">xshift</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">yshift</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">xscale</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">yscale</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">rotate</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">jitterFontRotate</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">jitterFontSize</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">jitterGridPoints</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">jitterLineWidth</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="s1">&#39;./make_image_data_pair.py --opdir=</span><span class="si">%s</span><span class="s1"> --docn=&quot;</span><span class="si">%04d</span><span class="s1">&quot;&#39;</span>
+            <span class="o">+</span> <span class="s2">&quot; --xshift=</span><span class="si">%d</span><span class="s2"> --yshift=</span><span class="si">%d</span><span class="s2"> --xscale=</span><span class="si">%f</span><span class="s2"> --yscale=</span><span class="si">%f</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; --rotate=</span><span class="si">%f</span><span class="s2"> --jitterFontRotate=</span><span class="si">%f</span><span class="s2"> --jitterFontSize=</span><span class="si">%f</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; --jitterGridPoints=</span><span class="si">%f</span><span class="s2"> --jitterLineWidth=</span><span class="si">%f</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; --fontFamily=&#39;</span><span class="si">%s</span><span class="s2">&#39; --fontSize=</span><span class="si">%f</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; --fontStyle=</span><span class="si">%s</span><span class="s2"> --fontWeight=</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="o">%</span> <span class="p">(</span>
+            <span class="n">image_dir</span><span class="p">,</span>
+            <span class="n">idx</span><span class="p">,</span>
+            <span class="n">xshift</span><span class="p">,</span>
+            <span class="n">yshift</span><span class="p">,</span>
+            <span class="n">xscale</span><span class="p">,</span>
+            <span class="n">yscale</span><span class="p">,</span>
+            <span class="n">rotate</span><span class="p">,</span>
+            <span class="n">jitterFontRotate</span><span class="p">,</span>
+            <span class="n">jitterFontSize</span><span class="p">,</span>
+            <span class="n">jitterGridPoints</span><span class="p">,</span>
+            <span class="n">jitterLineWidth</span><span class="p">,</span>
+            <span class="n">fontFamily</span><span class="p">,</span>
+            <span class="n">fontSize</span><span class="p">,</span>
+            <span class="n">fontStyle</span><span class="p">,</span>
+            <span class="n">fontWeight</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../models/atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../models/layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../to_tensors.html" title="Process Transfer-Learning training data into tensors for model building"
+             >next</a></li>
+        <li class="right" >
+          <a href="dataset.html" title="Make 10,000 image::data pairs, with different random perturbations each time"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../itp.html" >Transfer-learning images and data</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../scripts.html" >Scripts to make the transfer-learning training dataset</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Make 10,000 image::data pairs, with fixed fonts, orientation etc.</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

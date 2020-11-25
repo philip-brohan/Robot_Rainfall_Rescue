@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finding data locations on the page &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Script to convert datum locations into a tf.tensor" href="../../training_data/to_tensors/grid_to_tensor.html" />
+    <link rel="prev" title="Models for layout analysis" href="../layout.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../training_data/to_tensors/grid_to_tensor.html" title="Script to convert datum locations into a tf.tensor"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../layout.html" title="Models for layout analysis"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../layout.html" accesskey="U">Models for layout analysis</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Finding data locations on the page</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="finding-data-locations-on-the-page">
+<h1>Finding data locations on the page<a class="headerlink" href="#finding-data-locations-on-the-page" title="Permalink to this headline">¶</a></h1>
+<p>Ideally we’d like to know the location on the page of each rainfall datum - can we build a model to find that from the image?</p>
+<div class="figure align-center" id="id1" style="width: 95%">
+<a class="reference internal image-reference" href="../../_images/individual.png"><img alt="../../_images/individual.png" src="../../_images/individual.png" style="width: 95%;" /></a>
+<p class="caption"><span class="caption-text">Data locations for one member of the transfer-learning dataset: true locations on the left, locations produced by an ML model from the image on the right</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<p>This requires an extension to the <a class="reference internal" href="../../training_data/itp.html"><span class="doc">training dataset</span></a>: as well as the image tensors already in the dataset, we need, for each image,  a training target that is a tensor containing the page coordinates of each datum grid-point:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../training_data/to_tensors/grid_to_tensor.html">Script to make a tensor of the grid-points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_data/to_tensors/all_grid.html">Script to do this 10,000 times (once for each training image)</a></li>
+</ul>
+</div>
+<p>Then we specify a deep convolutional model with the images as input and the datum locations as output, and fit it as before.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="transcriberModel.html">Model specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Model fit script</a></li>
+</ul>
+</div>
+<p>Then we need to see if it works. There are two validation checks needed: the first to see how it does on the validation subset of the transfer-learning dataset on which it has been trained, and the second (harder) to see how well its skill transfers across to the real dataset.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Training-dataset validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cross-validation.html">Real-dataset cross-validation</a></li>
+</ul>
+</div>
+<p>So far this is neither a success or a failure - it definitely has some skill in finding the locations, but it’s very imprecise. Encouragingly, there is some skill for the real dataset as well as the training dataset, so the learning transfer is working, but it’s nothing like precise enough to use - more work is required.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../layout.html">Modelling the page layout</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Finding data locations directly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../find_corners/index.html">Finding grid_corners</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../training_data/to_tensors/grid_to_tensor.html" title="Script to convert datum locations into a tf.tensor"
+             >next</a></li>
+        <li class="right" >
+          <a href="../layout.html" title="Models for layout analysis"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../layout.html" >Models for layout analysis</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Finding data locations on the page</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

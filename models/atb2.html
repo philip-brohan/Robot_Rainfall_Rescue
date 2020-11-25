@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Direct transcription of a simplified training dataset &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="A deep convolutional transcriber" href="deep_convolutional_transcriber/index.html" />
+    <link rel="prev" title="Functions that package all the transfer-learning tensors as tf.data.Datasets" href="../training_data/to_tensors/files_to_dataset.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="deep_convolutional_transcriber/index.html" title="A deep convolutional transcriber"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../training_data/to_tensors/files_to_dataset.html" title="Functions that package all the transfer-learning tensors as tf.data.Datasets"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Direct transcription of a simplified training dataset</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="direct-transcription-of-a-simplified-training-dataset">
+<h1>Direct transcription of a simplified training dataset<a class="headerlink" href="#direct-transcription-of-a-simplified-training-dataset" title="Permalink to this headline">¶</a></h1>
+<p>First, let’s find out how hard it is to train an ML model to transcribe the <a class="reference internal" href="../training_data/scripts.html"><span class="doc">simplified training dataset</span></a>:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deep_convolutional_transcriber/index.html">A deep convolutional transcriber</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuned_convolutional_transcriber/index.html">A tuned convolutional transcriber</a></li>
+</ul>
+</div>
+<p>This is very encouraging: The tuned transcriber does the job essentially perfectly - it can take the images in the simplified training dataset, and recover the numbers from the images. This won’t help with the real problem, as it will only work with numbers in a fixed font at a set location on the page (the simplified training case), but it does illustrate the power of machine learning: Writing a program to do the transcription (even in the simple case) would be very difficult - training an ML model to do the job is easy and fast.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Direct transcription of the simplified training dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deep_convolutional_transcriber/index.html">A deep convolutional transcriber</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tuned_convolutional_transcriber/index.html">A tuned convolutional transcriber</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="deep_convolutional_transcriber/index.html" title="A deep convolutional transcriber"
+             >next</a></li>
+        <li class="right" >
+          <a href="../training_data/to_tensors/files_to_dataset.html" title="Functions that package all the transfer-learning tensors as tf.data.Datasets"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Direct transcription of a simplified training dataset</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

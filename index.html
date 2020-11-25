@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robot Rainfall Rescue &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting the Rainfall Rescue data" href="rainfall_rescue_data/index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="rainfall_rescue_data/index.html" title="Getting the Rainfall Rescue data"
+             accesskey="N">next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Robot Rainfall Rescue</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="robot-rainfall-rescue">
+<h1>Robot Rainfall Rescue<a class="headerlink" href="#robot-rainfall-rescue" title="Permalink to this headline">¶</a></h1>
+<p>Can we use Machine Learning to rapidly transcribe vital climate data from paper archives?</p>
+<p>Datasets of historical weather observations are vital to our understanding of climate change and variability, and improving those datasets means transcribing millions of observations - converting paper records into a digital form. Doing such transcription manually is <a class="reference external" href="http://brohan.org/transcription_methods_review/">expensive and slow</a>, and we have a backlog of millions of pages of potentially valuable records which have never been transcribed. We would dearly like a cheap, fast, software tool for extracting weather observations from (photographs of) archived paper documents. No such system currently exists, but recent developments in machine learning methods and image analysis tools suggest that it might now be possible to create one.</p>
+<p>This is an attempt to create such a tool: specifically it is an attempt to use the <a class="reference external" href="https://www.tensorflow.org/">TensorFlow</a> machine learning toolkit to reproduce the work done by 16,000 human volunteers in the <a class="reference external" href="https://www.zooniverse.org/projects/edh/rainfall-rescue">Rainfall Rescue project</a>.</p>
+<hr class="docutils" />
+<p>The requirement is to extract weather observations from document images, producing machine-readable output.</p>
+<div class="figure align-center" id="id1" style="width: 95%">
+<a class="reference internal image-reference" href="_images/The_problem.png"><img alt="_images/The_problem.png" src="_images/The_problem.png" style="width: 95%;" /></a>
+<p class="caption"><span class="caption-text">How can we do this: image to text conversion, 1,000,000 times, quickly and cheaply?</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<p>This transcription is easy for humans, but it’s laborious and slow. We need a software solution. Optical Character Recognition (OCR) software does not work well, and is a poor tool for this task in any event - here we need not only to recognise the characters, but to find where on the page the data of interest are, and to preserve the structure of the data table in the output. We also need to cope with variations - even in a single data source, the document images are rarely all exactly the same:</p>
+<div class="figure align-center" style="width: 95%">
+<a class="reference internal image-reference" href="_images/Variations1.png"><img alt="_images/Variations1.png" src="_images/Variations1.png" style="width: 95%;" /></a>
+</div>
+<p>So we need to create software that is powerful enough to find the grid and transcribe the digits from each image, flexible enough to cope with the many slightly-different image formats and colours, and adaptable enough that it can be re-purposed to transcribe records from other document types with different formats.</p>
+<p>This is a staggeringly difficult task, but deep-learning methods have demonstrated remarkable capability on other difficult tasks in the general field of image analysis, can we use deep-learning for transcription?</p>
+<hr class="docutils" />
+<p>We’re trying to come up with a general method. So we want a test dataset to work on that’s fairly typical - neither too easy nor to difficult. We need a dataset where the answers are already available - so we can easily test to see how well the transcription tool is working. I’ve chosen the 10-year rainfall sheets: lose-leaf forms, each recording monthly rainfall at a single UK station over a period of 10-years. The <a class="reference external" href="https://digital.nmla.metoffice.gov.uk/SO_d383374a-91c3-4a7b-ba96-41b81cfb9d67/">collection of these in the UK Meteorological Archive</a> comprises about 65,000 such sheets covering 1677-1960 (though the early years include very few stations). These were manually digitised in spring 2020 by the <a class="reference external" href="https://www.zooniverse.org/projects/edh/rainfall-rescue">Rainfall Rescue citizen science project</a>, so both the document images, and the transcriptions, are readily available.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+</div>
+<hr class="docutils" />
+<p>The software we need is a program that takes an image as input, and generates a table of transcribed numbers (observations) as output. <a class="reference external" href="https://en.wikipedia.org/wiki/Machine_learning">Machine Learning (ML)</a> is a process for automatically generating programs from paired examples of input and output. So as we have both images (input) and transcriptions (output) for the 10-year-rainfall dataset, we could directly train an ML model to do the transcription.</p>
+<p>But this isn’t quite what we want, because it requires us to already have the transcriptions to generate the model, and in general we need the model first to produce the transcriptions: We need to learn a transcription model despite not having any transcribed outputs to train on. The process for this is <a class="reference external" href="https://en.wikipedia.org/wiki/Transfer_learning">Transfer Learning</a> - we train our transcription model on a different, but related set of image::transcription pairs that we already have, and then apply that same model to transcribe the images we are interested in. We don’t have a set of very similar image::transcription pairs to do the training on, but we can make them.</p>
+<p>So instead of writing software to convert images to transcriptions (<em>very</em> hard), we write software to make images from transcriptions (much easier), use this to make a big dataset of transcription::image pairs, and then use this dataset to train an ML system to invert the process - to make transcriptions from images.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+</div>
+<hr class="docutils" />
+<p>We now have a transfer dataset for training, and a real dataset for validation. So all we need to do is design an ML model architecture that is powerful enough to do the transcription, train the model on the transfer dataset, deploy the trained model on the real (validation) dataset, and verify that it works.</p>
+<p>Unfortunately it’s not clear <a class="reference external" href="https://en.wikipedia.org/wiki/Model_selection">how to select the right model</a>, or what <a class="reference external" href="https://en.wikipedia.org/wiki/Hyperparameter_(machine_learning)">hyperparameters</a> to use in its training. So we are going to have to do some experiments - training a series of different models, on simplified problems, to find out what works.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models/deep_convolutional_transcriber/index.html">A deep convolutional transcriber</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models/tuned_convolutional_transcriber/index.html">A tuned convolutional transcriber</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models/find_grid/index.html">Finding data locations directly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models/find_corners/index.html">Finding grid_corners</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<hr class="docutils" />
+<p>This project uses only open-source software and publicly-available data. It should be easy to replicate and improve upon. Can you train a better transcriber? Or do you want to try this method on a different image collection? If so, <strong>please do</strong>.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Authors and acknowledgements</a></li>
+</ul>
+</div>
+<p>This document is distributed under the terms of the <a class="reference external" href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/">Open Government Licence</a>. Source code included is distributed under the terms of the <a class="reference external" href="https://opensource.org/licenses/BSD-2-Clause">BSD licence</a>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="#">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="rainfall_rescue_data/index.html" title="Getting the Rainfall Rescue data"
+             >next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Robot Rainfall Rescue</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

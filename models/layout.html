@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Models for layout analysis &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Finding data locations on the page" href="find_grid/index.html" />
+    <link rel="prev" title="Transcription accuracy by page location" href="tuned_convolutional_transcriber/place.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="find_grid/index.html" title="Finding data locations on the page"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="tuned_convolutional_transcriber/place.html" title="Transcription accuracy by page location"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Models for layout analysis</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="models-for-layout-analysis">
+<h1>Models for layout analysis<a class="headerlink" href="#models-for-layout-analysis" title="Permalink to this headline">¶</a></h1>
+<p>For the <a class="reference internal" href="../training_data/scripts.html"><span class="doc">simplified training dataset</span></a> we <a class="reference internal" href="atb2.html"><span class="doc">can do transcription directly</span></a>. For a more realistic training dataset this direct approach is much harder - the data are much more complicated so we need a much more complex model, and this is both hard to train and runs into practical limitations such as using too much GPU RAM.</p>
+<p>So it’s worth breaking the problem down into sections - what if we first just train a model to find data locations on the page, then we can cut the page up into sections and do transcription on each section separately.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="find_grid/index.html">Finding data locations directly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="find_corners/index.html">Finding grid_corners</a></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modelling the page layout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="find_grid/index.html">Finding data locations directly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="find_corners/index.html">Finding grid_corners</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="find_grid/index.html" title="Finding data locations on the page"
+             >next</a></li>
+        <li class="right" >
+          <a href="tuned_convolutional_transcriber/place.html" title="Transcription accuracy by page location"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Models for layout analysis</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

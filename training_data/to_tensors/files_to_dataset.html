@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Functions that package all the transfer-learning tensors as tf.data.Datasets &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Direct transcription of a simplified training dataset" href="../../models/atb2.html" />
+    <link rel="prev" title="Script to convert all the transfer-learning data to tf.tensors" href="convert_all.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../models/atb2.html" title="Direct transcription of a simplified training dataset"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="convert_all.html" title="Script to convert all the transfer-learning data to tf.tensors"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../itp.html" >Transfer-learning images and data</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../to_tensors.html" accesskey="U">Process Transfer-Learning training data into tensors for model building</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Functions that package all the transfer-learning tensors as tf.data.Datasets</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="functions-that-package-all-the-transfer-learning-tensors-as-tf-data-datasets">
+<h1>Functions that package all the transfer-learning tensors as tf.data.Datasets<a class="headerlink" href="#functions-that-package-all-the-transfer-learning-tensors-as-tf-data-datasets" title="Permalink to this headline">¶</a></h1>
+<p>Call these functions in the ML model fitting script - they output <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/data/Dataset">TensorFlow Datasets</a> which can be used directly in model fitting.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make tf.data.Datasets from the ATB2 fake data</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="c1"># Load an image tensor from a file</span>
+<span class="k">def</span> <span class="nf">load_image_tensor</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+    <span class="n">sict</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">parse_tensor</span><span class="p">(</span><span class="n">sict</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="c1"># Threshold</span>
+    <span class="n">imt</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">imt</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.75</span><span class="p">),</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">imt</span><span class="p">),</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">imt</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="p">[</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">imt</span>
+
+
+<span class="c1"># Load an standardised image tensor from a file</span>
+<span class="k">def</span> <span class="nf">load_standardised_tensor</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+    <span class="n">sict</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">parse_tensor</span><span class="p">(</span><span class="n">sict</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">imt</span>
+
+
+<span class="c1"># Load an numbers tensor from a file</span>
+<span class="k">def</span> <span class="nf">load_numbers_tensor</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+    <span class="n">sict</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">parse_tensor</span><span class="p">(</span><span class="n">sict</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="p">[</span><span class="mi">436</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">imt</span>
+
+
+<span class="c1"># Load a corners tensor from a file</span>
+<span class="k">def</span> <span class="nf">load_corners_tensor</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+    <span class="n">sict</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">parse_tensor</span><span class="p">(</span><span class="n">sict</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="c1">#imt = imt[0:4]</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="p">[</span><span class="mi">44</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">imt</span>
+
+
+<span class="c1"># Load a grid tensor from a file</span>
+<span class="k">def</span> <span class="nf">load_grid_tensor</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+    <span class="n">sict</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">parse_tensor</span><span class="p">(</span><span class="n">sict</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">imt</span><span class="p">,</span> <span class="p">[</span><span class="mi">240</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">imt</span>
+
+
+<span class="n">load_functions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;corners&quot;</span><span class="p">:</span> <span class="n">load_corners_tensor</span><span class="p">,</span>
+    <span class="s2">&quot;cell-centres&quot;</span><span class="p">:</span> <span class="n">load_grid_tensor</span><span class="p">,</span>
+    <span class="s2">&quot;numbers&quot;</span><span class="p">:</span> <span class="n">load_numbers_tensor</span><span class="p">,</span>
+    <span class="s2">&quot;images&quot;</span><span class="p">:</span> <span class="n">load_image_tensor</span><span class="p">,</span>
+    <span class="s2">&quot;standardised&quot;</span><span class="p">:</span> <span class="n">load_standardised_tensor</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">dirBase</span><span class="p">(</span><span class="n">subdir</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">subdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/ML_ten_year_rainfall/training_data&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/ML_ten_year_rainfall/training_data/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">),</span>
+            <span class="n">subdir</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># Get a dataset - images, numbers, corners, or standardised images</span>
+<span class="k">def</span> <span class="nf">getDataset</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">supported</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="s2">&quot;numbers&quot;</span><span class="p">,</span> <span class="s2">&quot;corners&quot;</span><span class="p">,</span> <span class="s2">&quot;cell-centres&quot;</span><span class="p">,</span> <span class="s2">&quot;standardised&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">group</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;group must be one of </span><span class="si">%r</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">supported</span><span class="p">)</span>
+
+    <span class="c1"># Get a list of filenames containing image tensors</span>
+    <span class="n">inFiles</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/tensors/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dirBase</span><span class="p">(</span><span class="n">subdir</span><span class="p">),</span> <span class="n">group</span><span class="p">))</span>
+
+    <span class="c1"># do we want the training set, the test set, or a single sample</span>
+    <span class="n">splitI</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inFiles</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">purpose</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">:</span>
+        <span class="n">inFiles</span> <span class="o">=</span> <span class="n">inFiles</span><span class="p">[:</span><span class="n">splitI</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">purpose</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+        <span class="n">inFiles</span> <span class="o">=</span> <span class="n">inFiles</span><span class="p">[</span><span class="n">splitI</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">purpose</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">selection</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">selection</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">inFiles</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not enough files to get selection&quot;</span><span class="p">)</span>
+        <span class="n">inFiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">inFiles</span><span class="p">[</span><span class="n">selection</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">nImages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inFiles</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">nImages</span><span class="p">:</span>
+            <span class="n">inFiles</span> <span class="o">=</span> <span class="n">inFiles</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">nImages</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Only </span><span class="si">%d</span><span class="s2"> images available, can&#39;t provide </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inFiles</span><span class="p">),</span> <span class="n">nImages</span><span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Create TensorFlow Dataset object from the file namelist</span>
+    <span class="n">inFiles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/tensors/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dirBase</span><span class="p">(</span><span class="n">subdir</span><span class="p">),</span> <span class="n">group</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inFiles</span><span class="p">]</span>
+    <span class="n">tr_data</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">inFiles</span><span class="p">))</span>
+
+    <span class="c1"># Convert the Dataset from file names to file contents</span>
+    <span class="n">tr_data</span> <span class="o">=</span> <span class="n">tr_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="n">load_functions</span><span class="p">[</span><span class="n">group</span><span class="p">],</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span>
+    <span class="p">)</span>
+    <span class="c1"># Optimisation</span>
+    <span class="n">tr_data</span> <span class="o">=</span> <span class="n">tr_data</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+    <span class="n">tr_data</span> <span class="o">=</span> <span class="n">tr_data</span><span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tr_data</span>
+
+
+<span class="k">def</span> <span class="nf">getImageDataset</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">getDataset</span><span class="p">(</span>
+        <span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="n">nImages</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">subdir</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">getNumbersDataset</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">getDataset</span><span class="p">(</span>
+        <span class="s2">&quot;numbers&quot;</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="n">nImages</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">subdir</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">getCornersDataset</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">getDataset</span><span class="p">(</span>
+        <span class="s2">&quot;corners&quot;</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="n">nImages</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">subdir</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">getGridDataset</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">getDataset</span><span class="p">(</span>
+        <span class="s2">&quot;cell-centres&quot;</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="n">nImages</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">subdir</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">getStandardisedDataset</span><span class="p">(</span>
+    <span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">getDataset</span><span class="p">(</span>
+        <span class="s2">&quot;standardised&quot;</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">nImages</span><span class="o">=</span><span class="n">nImages</span><span class="p">,</span> <span class="n">subdir</span><span class="o">=</span><span class="n">subdir</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../models/atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../models/layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../models/atb2.html" title="Direct transcription of a simplified training dataset"
+             >next</a></li>
+        <li class="right" >
+          <a href="convert_all.html" title="Script to convert all the transfer-learning data to tf.tensors"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../itp.html" >Transfer-learning images and data</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../to_tensors.html" >Process Transfer-Learning training data into tensors for model building</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Functions that package all the transfer-learning tensors as tf.data.Datasets</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

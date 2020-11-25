@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Process Transfer-Learning training data into tensors for model building &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Script to convert an image into a tf.tensor" href="to_tensors/image_to_tensor.html" />
+    <link rel="prev" title="Make 10,000 image::data pairs, with fixed fonts, orientation etc." href="scripts/dataset_simple.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="to_tensors/image_to_tensor.html" title="Script to convert an image into a tf.tensor"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="scripts/dataset_simple.html" title="Make 10,000 image::data pairs, with fixed fonts, orientation etc."
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="itp.html" accesskey="U">Transfer-learning images and data</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Process Transfer-Learning training data into tensors for model building</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="process-transfer-learning-training-data-into-tensors-for-model-building">
+<h1>Process Transfer-Learning training data into tensors for model building<a class="headerlink" href="#process-transfer-learning-training-data-into-tensors-for-model-building" title="Permalink to this headline">¶</a></h1>
+<p>The transfer-learning training dataset consists of 10,000 png images and 10,000 python pickle files - each pickle file containing an array of 436 digits (0-9). To model these with <a class="reference external" href="https://www.tensorflow.org/">TensorFlow</a> we need to convert both the images and the pickled arrays into <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tensors</a> and it’s much more efficient (in CPU time) to do this in a preprocessing step than in-line during model training.</p>
+<p>So we need a script to convert a png image file into a tensor file, a script to convert a pickled array into a tensor, and a script to run each of these 10,000 times - once for each case in the benchmark dataset.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="to_tensors/image_to_tensor.html">Script to convert an image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="to_tensors/numbers_to_tensor.html">Script to convert a pickled array</a></li>
+<li class="toctree-l1"><a class="reference internal" href="to_tensors/convert_all.html">Script to run these 10,000 times</a></li>
+</ul>
+</div>
+<p>The resulting serialised tensor files will take about 100 Gb of disc space (tensors are a space-inefficient way to store images).</p>
+<p>Then to present all those tensors to a ML model for training we need to package them as a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/data/Dataset">TensorFlow Dataset</a>:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="to_tensors/files_to_dataset.html">Function providing transfer-learning data as a tf.data.Dataset</a></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="to_tensors/image_to_tensor.html" title="Script to convert an image into a tf.tensor"
+             >next</a></li>
+        <li class="right" >
+          <a href="scripts/dataset_simple.html" title="Make 10,000 image::data pairs, with fixed fonts, orientation etc."
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="itp.html" >Transfer-learning images and data</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Process Transfer-Learning training data into tensors for model building</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

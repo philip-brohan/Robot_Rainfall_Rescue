@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The problem: paper to digital &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">The problem: paper to digital</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-problem-paper-to-digital">
+<h1>The problem: paper to digital<a class="headerlink" href="#the-problem-paper-to-digital" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-center" id="id1" style="width: 95%">
+<a class="reference internal image-reference" href="_images/The_problem.png"><img alt="_images/The_problem.png" src="_images/The_problem.png" style="width: 95%;" /></a>
+<p class="caption"><span class="caption-text">How can we do this: image to text conversion, 1,000,000 times, quickly and cheaply?</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<p>This is easy for humans, but it’s laborious and slow. We need a software solution. Optical Character Recognition (OCR) software does not work well, and is a poor tool for this task in any event - here we need not only to recognise the characters, but to find where on the page the data of interest are, and to preserve the structure of the data table in the output. We also need to cope with variations - the images are not all exactly the same:</p>
+<div class="figure align-center" style="width: 95%">
+<a class="reference internal image-reference" href="_images/Variations1.png"><img alt="_images/Variations1.png" src="_images/Variations1.png" style="width: 95%;" /></a>
+</div>
+<p>So we need to create software that is powerful enough to find the grid and transcribe the digits from each image, flexible enough to cope with the many slightly-different image formats and colours, and adaptable enough that it can be re-purposed to transcribe records from other document types with different formats.</p>
+<p>This is a staggeringly difficult task, but deep-learning methods have demonstrated remarkable capability on other difficult tasks in the general field of image analysis, can we use deep-learning for transcription?</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/RRR_logo.png" alt="Logo"/>
+            </a></p>
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">The problem: paper to digital</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>
