@@ -9,11 +9,15 @@
 
 import os
 
-rootd = "%s/ML_ten_year_rainfall/" % os.getenv("SCRATCH")
+rootd = "%s/Robot_Rainfall_Rescue/from_Ed/" % os.getenv("SCRATCH")
 
 # Function to check if the job is already done for this timepoint
 def is_done(filen, purpose):
-    op_file_name = "%s/tensors/images/%s/%s.tfd" % (rootd, purpose, filen[:-4],)
+    op_file_name = "%s/tensors/images/%s/%s.tfd" % (
+        rootd,
+        purpose,
+        filen[:-4],
+    )
     if os.path.isfile(op_file_name):
         return True
     return False
@@ -22,7 +26,7 @@ def is_done(filen, purpose):
 f = open("run_i2t.sh", "w+")
 
 count = 1
-files = sorted(os.listdir("%s/from_Ed/images" % rootd))
+files = sorted(os.listdir("%s/images" % rootd))
 for filen in files:
     if count % 10 == 0:
         if not is_done(filen, "test"):

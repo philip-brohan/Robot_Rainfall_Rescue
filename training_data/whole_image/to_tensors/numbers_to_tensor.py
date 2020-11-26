@@ -12,13 +12,14 @@ import pickle
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--rootd", help="root directory", type=str, required=True)
 parser.add_argument("--docn", help="Document name", type=str, required=True)
 args = parser.parse_args()
 
 # Load the numbers
 with open(
-    "%s/ML_ten_year_rainfall/training_data/numbers/%s.pkl"
-    % (os.getenv("SCRATCH"), args.docn),
+    "%s/numbers/%s.pkl"
+    % (args.rootd, args.docn),
     "rb",
 ) as pkf:
     mdata = pickle.load(pkf)
@@ -52,7 +53,7 @@ for yri in range(10):
 ict = tf.convert_to_tensor(target, numpy.float32)
 
 # Output the tensor
-opdir = "%s/ML_ten_year_rainfall/training_data/tensors/numbers/" % os.getenv("SCRATCH")
+opdir = "%s/tensors/numbers/" % args.rootd
 if not os.path.isdir(opdir):
     try:  # These calls sometimes collide
         os.makedirs(opdir)

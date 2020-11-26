@@ -22,7 +22,7 @@ if args.opfile is None:
     purpose = "training"
     if args.test:
         purpose = "test"
-    args.opfile = "%s/ML_ten_year_rainfall/tensors/images/%s/%s.tfd" % (
+    args.opfile = "%s/Robot_Rainfall_Rescue/from_Ed/tensors/images/%s/%s.tfd" % (
         os.getenv("SCRATCH"),
         purpose,
         args.filen[:-4],
@@ -30,7 +30,7 @@ if args.opfile is None:
 
 # Load the image as data
 image = Image.open(
-    "%s/ML_ten_year_rainfall/from_Ed/images/%s" % (os.getenv("SCRATCH"), args.filen)
+    "%s/Robot_Rainfall_Rescue/from_Ed/images/%s" % (os.getenv("SCRATCH"), args.filen)
 )
 
 # Output the tensor

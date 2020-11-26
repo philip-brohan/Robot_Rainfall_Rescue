@@ -12,17 +12,18 @@ from PIL import Image
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--rootd", help="root directory", type=str, required=True)
 parser.add_argument("--docn", help="Document name", type=str, required=True)
 args = parser.parse_args()
 
 # Load the image as data
 image = Image.open(
-    "%s/ML_ten_year_rainfall/training_data/images/%s.png"
-    % (os.getenv("SCRATCH"), args.docn)
+    "%s/images/%s.png"
+    % (args.rootd, args.docn)
 )
 
 # Output the tensor
-opdir = "%s/ML_ten_year_rainfall/training_data/tensors/images/" % os.getenv("SCRATCH")
+opdir = "%s/tensors/images/" % args.rootd
 if not os.path.isdir(opdir):
     try:  # These calls sometimes collide
         os.makedirs(opdir)

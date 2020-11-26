@@ -7,18 +7,24 @@
 
 import os
 
-rootd = "%s/ML_ten_year_rainfall/training_data/images/" % os.getenv("SCRATCH")
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--subdir", help="Dataset sub-directory", type=str, required=True)
+args = parser.parse_args()
+
+rootd = "%s/Robot_Rainfall_Rescue/training_data/%s" % (os.getenv("SCRATCH"),args.subdir)
 
 
 f = open("run_i2t.sh", "w+")
 
 for doci in range(10000):
     if os.path.isfile(
-        "%s/ML_ten_year_rainfall/training_data/tensors/images/%04d.tfd"
-        % (os.getenv("SCRATCH"), doci)
+        "%s/tensors/images/%04d.tfd"
+        % (rootd, doci)
     ):
         continue
-    cmd = ('./image_to_tensor.py --docn="%04d"\n') % doci
+    cmd = ('./image_to_tensor.py --rootd=%s --docn="%04d"\n') % (rootd,doci)
     f.write(cmd)
 
 f.close()

@@ -21,7 +21,6 @@ So a model tuned to the specifics of the problem would have fewer convolutional 
 .. toctree::
    :maxdepth: 1
 
-   Functions to provide training/test Dataset (common across models) <../../data/files_to_dataset>
    Model specification <transcriberModel>
    Model fit script <training>
 

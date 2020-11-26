@@ -9,12 +9,12 @@ import random
 from fonts import fontNames
 from fonts import fontScales
 
-image_dir = "%s/Robot_Rainfall_Rescue/training_data_unperturbed/" % os.getenv("SCRATCH")
+image_dir = "%s/Robot_Rainfall_Rescue/training_data/unperturbed/" % os.getenv("SCRATCH")
 
 f = open("run_mi.sh", "w+")
 
 for idx in range(10000):
-    fn = "%s/%04d.png" % (image_dir, idx)
+    fn = "%s/images/%04d.png" % (image_dir, idx)
     if os.path.exists(fn):
         continue
     fontFamily = "Arial"

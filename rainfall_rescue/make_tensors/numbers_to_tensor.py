@@ -22,7 +22,7 @@ if args.opfile is None:
     purpose = "training"
     if args.test:
         purpose = "test"
-    args.opfile = "%s/ML_ten_year_rainfall/tensors/numbers/%s/%s.tfd" % (
+    args.opfile = "%s/Robot_Rainfall_Rescue/from_Ed/tensors/numbers/%s/%s.tfd" % (
         os.getenv("SCRATCH"),
         purpose,
         args.filen[:-4],
@@ -40,7 +40,7 @@ def reformatNumber(mv):
 # Load the numbers
 numbers = []
 with open(
-    "%s/ML_ten_year_rainfall/from_Ed/csvs/%s" % (os.getenv("SCRATCH"), args.filen)
+    "%s/Robot_Rainfall_Rescue/from_Ed/csvs/%s" % (os.getenv("SCRATCH"), args.filen)
 ) as csvf:
     csvr = csv.reader(csvf)
     csvl = list(csvr)

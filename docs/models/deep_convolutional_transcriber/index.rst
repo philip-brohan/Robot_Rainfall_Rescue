@@ -13,7 +13,6 @@ As a first attempt at a model which might do the transcription, I'm using a stra
 .. toctree::
    :maxdepth: 1
 
-   Functions to provide training/test Dataset (common across models) <../../data/files_to_dataset>
    Model specification <transcriberModel>
    Model fit script <training>
 

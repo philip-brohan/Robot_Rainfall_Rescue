@@ -20,7 +20,7 @@ parser.add_argument(
     help="Output directory",
     type=str,
     required=False,
-    default="%s/ML_ten_year_rainfall/from_Ed/" % os.getenv("SCRATCH"),
+    default="%s/Robot_Rainfall_Rescue/from_Ed/" % os.getenv("SCRATCH"),
 )
 args = parser.parse_args()
 
