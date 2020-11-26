@@ -38,7 +38,7 @@ args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
 transcriber = transcriberModel()
-weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/" + "Epoch_%04d") % (
+weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/Epoch_%04d") % (
     os.getenv("SCRATCH"),
     args.epoch - 1,
 )
@@ -47,8 +47,10 @@ load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 load_status.assert_existing_objects_matched()
 
 # Make the probability matrix
-testImages = getImageDataset(purpose="test", nImages=args.nimages)
-testNumbers = getNumbersDataset(purpose="test", nImages=args.nimages)
+testImages = getImageDataset(subdir="unperturbed", purpose="test", nImages=args.nimages)
+testNumbers = getNumbersDataset(
+    subdir="unperturbed", purpose="test", nImages=args.nimages
+)
 testData = tf.data.Dataset.zip((testImages, testNumbers))
 count = 0
 pmatrix = numpy.zeros((436))
@@ -65,7 +67,7 @@ pmatrix /= count
 
 # Plot encoded using same method as original plot
 fig = Figure(
-    figsize=(7.68, 10.24),
+    figsize=(6.40, 10.24),
     dpi=100,
     facecolor="white",
     edgecolor="black",
@@ -80,7 +82,9 @@ ax_full = fig.add_axes([0, 0, 1, 1])
 ax_full.set_xlim([0, 1])
 ax_full.set_ylim([0, 1])
 ax_full.add_patch(
-    matplotlib.patches.Rectangle((0, 0), 1, 1, fill=True, facecolor=(.95,.95,.95,1))
+    matplotlib.patches.Rectangle(
+        (0, 0), 1, 1, fill=True, facecolor=(0.95, 0.95, 0.95, 1)
+    )
 )
 
 ax_full.set_axis_off()
@@ -103,14 +107,14 @@ imp = {
 }
 
 # Box with the data in
-topLeft = (0.07 + imp["xshift"] / 768, 0.725 + imp["yshift"] / 1024)
+topLeft = (0.07 + imp["xshift"] / 640, 0.725 + imp["yshift"] / 1024)
 topRight = (
-    0.93 + imp["xshift"] / 768 + (imp["xscale"] - 1) * 0.86,
+    0.93 + imp["xshift"] / 640 + (imp["xscale"] - 1) * 0.86,
     0.725 + imp["yshift"] / 1024,
 )
-bottomLeft = (0.07 + imp["xshift"] / 768, 0.325 + imp["yshift"] / 1024)
+bottomLeft = (0.07 + imp["xshift"] / 640, 0.325 + imp["yshift"] / 1024)
 bottomRight = (
-    0.93 + imp["xshift"] / 768 + (imp["xscale"] - 1) * 0.86,
+    0.93 + imp["xshift"] / 640 + (imp["xscale"] - 1) * 0.86,
     0.325 + imp["yshift"] / 1024 - (imp["yscale"] - 1) * 0.4,
 )
 ax_full.add_line(

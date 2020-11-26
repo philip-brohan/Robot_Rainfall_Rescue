@@ -16,21 +16,15 @@ class transcriberModel(tf.keras.Model):
         # parent constructor
         super(transcriberModel, self).__init__()
         # Initial shape (1024,640,1)
-        self.conv1A = tf.keras.layers.Conv2D(
-            16, (3, 3), strides=(2, 2), padding="same"
-        )
+        self.conv1A = tf.keras.layers.Conv2D(16, (3, 3), strides=(2, 2), padding="same")
         self.drop1A = tf.keras.layers.Dropout(0.3)
         self.act1A = tf.keras.layers.ELU()
         # Now (512,320,16)
-        self.conv1B = tf.keras.layers.Conv2D(
-            32, (3, 3), strides=(2, 2), padding="same"
-        )
+        self.conv1B = tf.keras.layers.Conv2D(32, (3, 3), strides=(2, 2), padding="same")
         self.drop1B = tf.keras.layers.Dropout(0.3)
         self.act1B = tf.keras.layers.ELU()
         # Now (256,160,32)
-        self.conv1C = tf.keras.layers.Conv2D(
-            64, (3, 3), strides=(2, 2), padding="same"
-        )
+        self.conv1C = tf.keras.layers.Conv2D(64, (3, 3), strides=(2, 2), padding="same")
         self.drop1C = tf.keras.layers.Dropout(0.3)
         self.act1C = tf.keras.layers.ELU()
         # Now (128,80,64)
@@ -55,9 +49,16 @@ class transcriberModel(tf.keras.Model):
         # reshape to 1d
         self.flatten = tf.keras.layers.Flatten()
         # map directly to output format (436 digits)
-        self.map_to_op = tf.keras.layers.Dense(436 * 10,)
+        self.map_to_op = tf.keras.layers.Dense(
+            436 * 10,
+        )
         # softmax to get digit probabilities at each location
-        self.op_reshape = tf.keras.layers.Reshape(target_shape=(436, 10,))
+        self.op_reshape = tf.keras.layers.Reshape(
+            target_shape=(
+                436,
+                10,
+            )
+        )
         self.op_softmax = tf.keras.layers.Softmax(axis=2)
 
     def call(self, inputs):

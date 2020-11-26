@@ -10,7 +10,7 @@ import random
 from fonts import fontNames
 from fonts import fontScales
 
-image_dir = "%s/Robot_Rainfall_Rescue/training_data" % os.getenv("SCRATCH")
+image_dir = "%s/Robot_Rainfall_Rescue/training_data/perturbed" % os.getenv("SCRATCH")
 
 f = open("run_mi.sh", "w+")
 

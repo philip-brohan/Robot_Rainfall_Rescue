@@ -33,7 +33,7 @@ args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
 transcriber = transcriberModel()
-weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/" + "Epoch_%04d") % (
+weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/Epoch_%04d") % (
     os.getenv("SCRATCH"),
     args.epoch - 1,
 )
@@ -42,10 +42,10 @@ load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 load_status.assert_existing_objects_matched()
 
 # Get test case number args.image
-testImage = getImageDataset(purpose="test", nImages=args.image + 1)
+testImage = getImageDataset(subdir='unperturbed',purpose="test", nImages=args.image + 1)
 testImage = testImage.batch(1)
 originalImage = next(itertools.islice(testImage, args.image, args.image + 1))
-testNumbers = getNumbersDataset(purpose="test", nImages=args.image + 1)
+testNumbers = getNumbersDataset(subdir='unperturbed',purpose="test", nImages=args.image + 1)
 testNumbers = testNumbers.batch(1)
 originalNumbers = next(itertools.islice(testNumbers, args.image, args.image + 1))
 
@@ -76,7 +76,15 @@ ax_full.add_patch(
 # Original
 ax_original = fig.add_axes([0.02, 0.015, 0.47, 0.97])
 ax_original.set_axis_off()
-ax_original.matshow(tf.reshape(originalImage, [1024, 768, 3]))
+ax_original.imshow(
+    tf.reshape(originalImage, [1024, 640]),
+    cmap="gray",
+    vmin=0,
+    vmax=1,
+    aspect="auto",
+    origin="upper",
+    interpolation="nearest",
+)
 
 # Plot encoded using same method as original plot
 ax_encoded = fig.add_axes([0.51, 0.015, 0.47, 0.97])

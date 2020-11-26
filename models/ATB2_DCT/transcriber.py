@@ -7,6 +7,7 @@ import sys
 import tensorflow as tf
 import pickle
 import numpy
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -42,14 +43,22 @@ bufferSize = 100  # Shouldn't make much difference (data is random)
 batchSize = 32  # Arbitrary
 
 # Set up the training data
-imageData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
-numbersData = getNumbersDataset(purpose="training", nImages=nTrainingImages).repeat()
+imageData = getImageDataset(
+    subdir="unperturbed", purpose="training", nImages=nTrainingImages
+).repeat()
+numbersData = getNumbersDataset(
+    subdir="unperturbed", purpose="training", nImages=nTrainingImages
+).repeat()
 trainingData = tf.data.Dataset.zip((imageData, numbersData))
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
 
 # Set up the test data
-testImageData = getImageDataset(purpose="test", nImages=nTestImages).repeat()
-testNumbersData = getNumbersDataset(purpose="test", nImages=nTestImages).repeat()
+testImageData = getImageDataset(
+    subdir="unperturbed", purpose="test", nImages=nTestImages
+).repeat()
+testNumbersData = getNumbersDataset(
+    subdir="unperturbed", purpose="test", nImages=nTestImages
+).repeat()
 testData = tf.data.Dataset.zip((testImageData, testNumbersData))
 testData = testData.batch(batchSize)
 
@@ -64,10 +73,10 @@ with strategy.scope():
     )
     # If we are doing a restart, load the weights
     if args.epoch > 0:
-        weights_dir = (
-            "%s/Robot_Rainfall_Rescue/models/ATB2_DCT/"
-            + "Epoch_%04d"
-        ) % (os.getenv("SCRATCH"), args.epoch - 1,)
+        weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/Epoch_%04d") % (
+            os.getenv("SCRATCH"),
+            args.epoch - 1,
+        )
         load_status = seeker.load_weights("%s/ckpt" % weights_dir)
         # Check the load worked
         load_status.assert_existing_objects_matched()
@@ -80,9 +89,10 @@ history["val_loss"] = []
 
 class CustomSaver(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        save_dir = (
-            "%s/Robot_Rainfall_Rescue/models/ATB2_DCT" + "Epoch_%04d"
-        ) % (os.getenv("SCRATCH"), epoch,)
+        save_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_DCT/Epoch_%04d") % (
+            os.getenv("SCRATCH"),
+            epoch,
+        )
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         self.model.save_weights("%s/ckpt" % save_dir)

@@ -10,9 +10,7 @@ def load_image_tensor(file_name):
     imt = tf.io.parse_tensor(sict, numpy.float32)
     # Threshold: 0 if < 0.75, 1 otherwise
     imt = tf.where(
-        tf.less(imt, tf.zeros_like(imt) + 0.75),
-        tf.zeros_like(imt),
-        tf.ones_like(imt)
+        tf.less(imt, tf.zeros_like(imt) + 0.75), tf.zeros_like(imt), tf.ones_like(imt)
     )
     imt = tf.reshape(imt, [1024, 640, 1])
     return imt
@@ -30,7 +28,7 @@ def load_numbers_tensor(file_name):
 #  Optionally specify how many images to use.
 def getImageDataset(purpose="training", nImages=None):
 
-    baseD = "%s/ML_ten_year_rainfall/tensors/images/%s" % (
+    baseD = "%s/Robot_Rainfall_Rescue/from_Ed/tensors/images/%s" % (
         os.getenv("SCRATCH"),
         purpose,
     )
@@ -64,7 +62,7 @@ def getImageDataset(purpose="training", nImages=None):
 #  Optionally specify how many images to use.
 def getNumbersDataset(purpose="training", nImages=None):
 
-    baseD = "%s/ML_ten_year_rainfall/tensors/numbers/%s" % (
+    baseD = "%s/Robot_Rainfall_Rescue/from_Ed/tensors/numbers/%s" % (
         os.getenv("SCRATCH"),
         purpose,
     )
