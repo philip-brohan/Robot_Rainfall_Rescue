@@ -42,10 +42,14 @@ load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 load_status.assert_existing_objects_matched()
 
 # Get test case number args.image
-testImage = getImageDataset(subdir='unperturbed',purpose="test", nImages=args.image + 1)
+testImage = getImageDataset(
+    subdir="unperturbed", purpose="test", nImages=args.image + 1
+)
 testImage = testImage.batch(1)
 originalImage = next(itertools.islice(testImage, args.image, args.image + 1))
-testNumbers = getNumbersDataset(subdir='unperturbed',purpose="test", nImages=args.image + 1)
+testNumbers = getNumbersDataset(
+    subdir="unperturbed", purpose="test", nImages=args.image + 1
+)
 testNumbers = testNumbers.batch(1)
 originalNumbers = next(itertools.islice(testNumbers, args.image, args.image + 1))
 

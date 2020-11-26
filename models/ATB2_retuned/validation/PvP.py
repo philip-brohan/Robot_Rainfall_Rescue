@@ -38,7 +38,7 @@ args = parser.parse_args()
 
 # Set up the model and load the weights at the chosen epoch
 transcriber = transcriberModel()
-weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_retuned/" + "Epoch_%04d") % (
+weights_dir = ("%s/Robot_Rainfall_Rescue/models/ATB2_retuned/Epoch_%04d") % (
     os.getenv("SCRATCH"),
     args.epoch - 1,
 )
@@ -47,8 +47,10 @@ load_status = transcriber.load_weights("%s/ckpt" % weights_dir)
 load_status.assert_existing_objects_matched()
 
 # Make the probability matrix
-testImages = getImageDataset(purpose="test", nImages=args.nimages)
-testNumbers = getNumbersDataset(purpose="test", nImages=args.nimages)
+testImages = getImageDataset(subdir="unperturbed", purpose="test", nImages=args.nimages)
+testNumbers = getNumbersDataset(
+    subdir="unperturbed", purpose="test", nImages=args.nimages
+)
 testData = tf.data.Dataset.zip((testImages, testNumbers))
 count = numpy.zeros(10)
 pmatrix = numpy.zeros((10, 10))
