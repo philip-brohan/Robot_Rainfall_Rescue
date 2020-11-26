@@ -17,10 +17,7 @@ parser.add_argument("--docn", help="Document name", type=str, required=True)
 args = parser.parse_args()
 
 # Load the image as data
-image = Image.open(
-    "%s/images/%s.png"
-    % (args.rootd, args.docn)
-)
+image = Image.open("%s/images/%s.png" % (args.rootd, args.docn))
 
 # Output the tensor
 opdir = "%s/tensors/images/" % args.rootd

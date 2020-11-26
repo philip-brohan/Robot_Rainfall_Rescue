@@ -18,8 +18,7 @@ args = parser.parse_args()
 
 # Load the numbers
 with open(
-    "%s/numbers/%s.pkl"
-    % (args.rootd, args.docn),
+    "%s/numbers/%s.pkl" % (args.rootd, args.docn),
     "rb",
 ) as pkf:
     mdata = pickle.load(pkf)

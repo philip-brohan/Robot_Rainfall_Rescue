@@ -7,19 +7,24 @@
 #  (in the file 'run_g2t.txt') which can be run in parallel.
 
 import os
+import argparse
 
-rootd = "%s/ML_ten_year_rainfall/training_data/meta/" % os.getenv("SCRATCH")
+parser = argparse.ArgumentParser()
+parser.add_argument("--subdir", help="Dataset sub-directory", type=str, required=True)
+args = parser.parse_args()
+
+rootd = "%s/Robot_Rainfall_Rescue/training_data/%s" % (
+    os.getenv("SCRATCH"),
+    args.subdir,
+)
 
 
 f = open("run_g2t.sh", "w+")
 
 for doci in range(10000):
-    if os.path.isfile(
-        "%s/ML_ten_year_rainfall/training_data/tensors/cell-centres/%04d.tfd"
-        % (os.getenv("SCRATCH"), doci)
-    ):
+    if os.path.isfile("%s/tensors/cell-centres/%04d.tfd" % (rootd, doci)):
         continue
-    cmd = ('./metadata_to_grid_tensor.py --docn="%04d"\n') % doci
+    cmd = ('./metadata_to_grid_tensor.py --rootd=%s --docn="%04d"\n') % (rootd, doci)
     f.write(cmd)
 
 f.close()
