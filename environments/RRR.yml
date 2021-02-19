@@ -9,6 +9,7 @@ dependencies:
   - tensorflow=2.2.*
 # Image processing
   - pillow=7.1.*
+  - scikit-image=0.17.*
 # Allow packages only available via pip
   - pip
 #

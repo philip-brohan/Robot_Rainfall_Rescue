@@ -15,7 +15,7 @@ image_dir = "%s/Robot_Rainfall_Rescue/training_data/perturbed" % os.getenv("SCRA
 f = open("run_mi.sh", "w+")
 
 for idx in range(10000):
-    fn = "%s/%04d.png" % (image_dir, idx)
+    fn = "%s/images/%04d.png" % (image_dir, idx)
     if os.path.exists(fn):
         continue
     fontFamily = random.choice(fontNames)
