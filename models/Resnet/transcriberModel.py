@@ -20,7 +20,7 @@ def resIdentity(x, filters, reg=tf.keras.regularizers.l2(0.001)):
 
     # Map input to nFProc features with 1x1 convolution
     x = tf.keras.layers.Conv2D(
-        nFIn,
+        nFProc,
         kernel_size=(1, 1),
         strides=(1, 1),
         padding="valid",
@@ -42,7 +42,7 @@ def resIdentity(x, filters, reg=tf.keras.regularizers.l2(0.001)):
 
     # Resize back to original no. of features
     x = tf.keras.layers.Conv2D(
-        nFOut,
+        nFIO,
         kernel_size=(1, 1),
         strides=(1, 1),
         padding="valid",
@@ -61,10 +61,12 @@ def resStride(x, s, filters, reg=tf.keras.regularizers.l2(0.001)):
 
     # Exactly the same as resIdentity, except that both original and residual are
     #  reduced by s*s, using strided 1xi convolution
-
+    x_skip = x  
+    nFProc, nFIO = filters
+    
     # Map input to nFProc features with 1x1 convolution
     x = tf.keras.layers.Conv2D(
-        nFIn,
+        nFProc,
         kernel_size=(1, 1),
         strides=(s, s),
         padding="valid",
@@ -86,7 +88,7 @@ def resStride(x, s, filters, reg=tf.keras.regularizers.l2(0.001)):
 
     # Resize back to original no. of features
     x = tf.keras.layers.Conv2D(
-        nFOut,
+        nFIO,
         kernel_size=(1, 1),
         strides=(1, 1),
         padding="valid",
@@ -96,12 +98,12 @@ def resStride(x, s, filters, reg=tf.keras.regularizers.l2(0.001)):
 
     # Add the input back (residual)
     x_skip = tf.keras.layers.Conv2D(
-        nFIn,
+        nFIO,
         kernel_size=(1, 1),
         strides=(s, s),
         padding="valid",
         kernel_regularizer=reg,
-    )(x)
+    )(x_skip)
     x_skip = tf.keras.layers.BatchNormalization()(x_skip)
     x = tf.keras.layers.Add()([x, x_skip])
     x = tf.keras.layers.ReLU()(x)
@@ -114,12 +116,13 @@ def resnetRRR():
 
     # Reduce the dimensions of the input with a large-scale strided convolution
     #  and maxpooling - modelled after resnet50
+    inputs = tf.keras.Input(shape=(1024,640,1))
     x = tf.keras.layers.Conv2D(16, kernel_size=(7, 7), strides=(2, 2), padding="valid")(
-        tf.keras.Input()
+        inputs
     )
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.ReLU()(x)
-    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
+    x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
     # Now build a deep residual model on the reduced inputs
     x = resStride(x, s=1, filters=(16, 32))
@@ -131,15 +134,35 @@ def resnetRRR():
     x = resIdentity(x, filters=(32, 64))
     x = resIdentity(x, filters=(32, 64))
 
-    x = resStride(x, s=2, filters=(64, 128))
-    x = resIdentity(x, filters=(64, 128))
-    x = resIdentity(x, filters=(64, 128))
-    x = resIdentity(x, filters=(64, 128))
+    x = resStride(x, s=2, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
 
-    x = resStride(x, s=2, filters=(128, 256))
-    x = resIdentity(x, filters=(128, 256))
-    x = resIdentity(x, filters=(128, 256))
-    x = resIdentity(x, filters=(128, 256))
+    x = resStride(x, s=2, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+
+    x = resStride(x, s=2, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+
+    x = resStride(x, s=2, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+    x = resIdentity(x, filters=(32, 64))
+
+#    x = resStride(x, s=2, filters=(64, 128))
+#    x = resIdentity(x, filters=(64, 128))
+#    x = resIdentity(x, filters=(64, 128))
+#    x = resIdentity(x, filters=(64, 128))
+
+#    x = resStride(x, s=2, filters=(128, 256))
+#    x = resIdentity(x, filters=(128, 256))
+#    x = resIdentity(x, filters=(128, 256))
+#    x = resIdentity(x, filters=(128, 256))
 
     # Map to output
     x = tf.keras.layers.Flatten()(x)

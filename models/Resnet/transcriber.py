@@ -40,7 +40,7 @@ if nImagesInEpoch is None:
 
 # Dataset parameters
 bufferSize = 100  # Shouldn't make much difference (data is random)
-batchSize = 32  # Arbitrary
+batchSize = 2  # Arbitrary
 
 # Set up the training data
 imageData = getImageDataset(
