@@ -15,8 +15,8 @@ image_dir = "%s/Robot_Rainfall_Rescue/training_data/cell/perturbed/" % os.getenv
 
 f = open("run_mi.sh", "w+")
 
-for idx in range(10000):
-    fn = "%s/images/%04d.png" % (image_dir, idx)
+for idx in range(100000):
+    fn = "%s/images/%05d.png" % (image_dir, idx)
     if os.path.exists(fn):
         continue
     fontFamily = "Arial"
@@ -36,7 +36,7 @@ for idx in range(10000):
     jitterLineWidth = random.normalvariate(0, 0.25)
     f.write(
         (
-            './make_image_data_pair.py --opdir=%s --docn="%04d"'
+            './make_image_data_pair.py --opdir=%s --docn="%05d"'
             + " --xshift=%d --yshift=%d --xscale=%f --yscale=%f"
             + " --rotate=%f --jitterFontRotate=%f --jitterFontSize=%f"
             + " --jitterGridPoints=%f --jitterLineWidth=%f"
