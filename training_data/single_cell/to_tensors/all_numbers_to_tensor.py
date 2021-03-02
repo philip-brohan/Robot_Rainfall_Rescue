@@ -20,7 +20,7 @@ rootd = "%s/Robot_Rainfall_Rescue/training_data/cell/%s" % (
 
 f = open("run_n2t.sh", "w+")
 
-for doci in range(100000):
+for doci in range(10000):
     if os.path.isfile("%s/tensors/numbers/%05d.tfd" % (rootd, doci)):
         continue
     cmd = ('./numbers_to_tensor.py --rootd=%s --docn="%05d"\n') % (rootd, doci)

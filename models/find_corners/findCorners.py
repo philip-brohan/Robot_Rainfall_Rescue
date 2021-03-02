@@ -25,7 +25,7 @@ from makeDataset import getImageDataset
 from makeDataset import getCornersDataset
 
 # Load the model specification
-from cornerModel import cornerModel
+from cornerModel_GAP import cornerModel
 
 # How many images to use?
 nTrainingImages = 9000  # Max is 9000
@@ -44,14 +44,22 @@ bufferSize = 100  # Shouldn't make much difference
 batchSize = 32  #
 
 # Set up the training data
-imageData = getImageDataset(purpose="training", nImages=nTrainingImages).repeat()
-cornersData = getCornersDataset(purpose="training", nImages=nTrainingImages).repeat()
+imageData = getImageDataset(
+    purpose="training", subdir="perturbed", nImages=nTrainingImages
+).repeat()
+cornersData = getCornersDataset(
+    purpose="training", subdir="perturbed", nImages=nTrainingImages
+).repeat()
 trainingData = tf.data.Dataset.zip((imageData, cornersData))
 trainingData = trainingData.shuffle(bufferSize).batch(batchSize)
 
 # Set up the test data
-testImageData = getImageDataset(purpose="test", nImages=nTestImages).repeat()
-testCornersData = getCornersDataset(purpose="test", nImages=nTestImages).repeat()
+testImageData = getImageDataset(
+    purpose="test", subdir="perturbed", nImages=nTestImages
+).repeat()
+testCornersData = getCornersDataset(
+    purpose="test", subdir="perturbed", nImages=nTestImages
+).repeat()
 testData = tf.data.Dataset.zip((testImageData, testCornersData))
 testData = testData.batch(batchSize)
 
@@ -60,14 +68,16 @@ with strategy.scope():
     seeker = cornerModel()
     seeker.compile(
         optimizer=tf.keras.optimizers.Adadelta(
-            learning_rate=1e-03, rho=0.95, epsilon=1e-07, name="Adadelta"
+            learning_rate=1e-01, rho=0.95, epsilon=1e-07, name="Adadelta"
         ),
         loss=tf.keras.losses.MeanSquaredError(),
     )
 
 # If we are doing a restart, load the weights
 if args.epoch > 0:
-    weights_dir = ("%s/ML_ten_year_rainfall/models/find_corners/" + "Epoch_%04d") % (
+    weights_dir = (
+        "%s/ML_ten_year_rainfall/models/find_corners_GAP/" + "Epoch_%04d"
+    ) % (
         os.getenv("SCRATCH"),
         args.epoch - 1,
     )
@@ -83,7 +93,9 @@ history["val_loss"] = []
 
 class CustomSaver(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        save_dir = ("%s/ML_ten_year_rainfall/models/find_corners/" + "Epoch_%04d") % (
+        save_dir = (
+            "%s/ML_ten_year_rainfall/models/find_corners_GAP/" + "Epoch_%04d"
+        ) % (
             os.getenv("SCRATCH"),
             epoch,
         )

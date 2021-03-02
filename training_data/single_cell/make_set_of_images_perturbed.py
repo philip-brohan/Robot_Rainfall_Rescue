@@ -15,13 +15,16 @@ image_dir = "%s/Robot_Rainfall_Rescue/training_data/cell/perturbed/" % os.getenv
 
 f = open("run_mi.sh", "w+")
 
-for idx in range(100000):
+for idx in range(10000):
     fn = "%s/images/%05d.png" % (image_dir, idx)
     if os.path.exists(fn):
         continue
-    fontFamily = "Arial"
-    fontStyle = "normal"
-    fontWeight = "normal"
+    fontFamily = random.choice(fontNames)
+    fontStyle = random.choice(["normal", "italic", "oblique"])
+    fontWeight = random.choice(["normal", "bold", "light"])
+    #fontFamily = "Arial"
+    #fontStyle = "normal"
+    #fontWeight = "normal"
     fontSize = 12
     if fontFamily in fontScales:
         fontSize *= fontScales[fontFamily]
