@@ -10,6 +10,9 @@ dependencies:
 # Image processing
   - pillow=7.1.*
   - scikit-image=0.17.*
+  - opencv=4.5.*
+# Fisher-Jenks 1d clustering
+  - jenkspy=0.1.*
 # Allow packages only available via pip
   - pip
 #

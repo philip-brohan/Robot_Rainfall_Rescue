@@ -22,7 +22,7 @@ for idx in range(10000):
     fontFamily = random.choice(fontNames)
     fontStyle = random.choice(["normal", "italic", "oblique"])
     fontWeight = random.choice(["normal", "bold", "light"])
-    #fontFamily = "Arial"
+    #fontFamily = "Ariel"
     #fontStyle = "normal"
     #fontWeight = "normal"
     fontSize = 12
