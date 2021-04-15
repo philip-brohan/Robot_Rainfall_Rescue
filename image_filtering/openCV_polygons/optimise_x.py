@@ -7,12 +7,13 @@ import cv2
 import numpy as np
 import random
 
-import jenkspy
+import scipy.optimize
 
 import matplotlib
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.patches import Circle
 
 # Convert image to BW
 def imageToBW(image):
@@ -32,7 +33,7 @@ def imageToBW(image):
 
 # Find line segments in the processed image
 def imageToLines(image):
-    fld = cv2.ximgproc.createFastLineDetector(25, 0.141, 50, 50, 0, True)
+    fld = cv2.ximgproc.createFastLineDetector(25, 0.141, 50, 50, 0, False)
     lines = fld.detect(image.copy())
 
     # Find the nearly-vertical lines in the centre of the image
@@ -40,7 +41,7 @@ def imageToLines(image):
     for line in lines:
         if max(line[0][1], line[0][3]) > 1200:
             continue
-        if min(line[0][1], line[0][3]) < 300:
+        if min(line[0][1], line[0][3]) < 200:
             continue
         if (abs(line[0][0] - line[0][2]) / abs(line[0][1] - line[0][3])) < 0.1:
             nv.append(line)
@@ -57,117 +58,95 @@ def imageToLines(image):
             nv.append(line)
     hlines = np.array(nv)
 
-    # Cluster the lines in the x direction
+    # Find grid-spaced points in the x direction
+
+    return {"vertical": vlines, "horizontal": hlines}
+
+
+# Optimisation target function - how well does a given spacing and offset fit the data
+def fitVlines(x):
+    offset = x[0]
+    space = x[1]
+    # Sum over each of the 11 boundary lines
+    count = 0
+    result = 0
+    for lidx in range(11):
+        # find all the x points in the region of the line
+        lx = offset + space * lidx
+        lxmin = lx - space * 0.6
+        lxmax = lx + space * 0.6
+        xsl = np.where(np.logical_and(xs > lxmin, xs <= lxmax))
+        if (len(xsl[0])) > 0:
+            try:
+                xss = xs[xsl]
+            except Exception:
+                print(xs)
+                print(xsl)
+                sys.exit(1)
+            xsl = np.sum((xss - lx) ** 2)
+            result += np.sqrt(np.sum(xsl)) / len(xss)
+            count += 1
+        else:
+            result += 1
+            count += 1
+    return result / count
+
+
+# Optimisation function - find the spacing and offset with best fit
+def findOS(vlines):
+    # Put the x points into a single array
+    global xs  # Needed by fitVlines and I can't work out how to pass it as argument
     xs = []
     for line in vlines:
         xs.append(line[0][0])
         xs.append(line[0][2])
+    xs = np.array(xs)
+    # Set initial bounds for spacing and offset
+    offset_bounds = (190, 240)
+    space_bounds = (54, 74)
+    # Small search domain, so brute-force offset and space
+    result = scipy.optimize.brute(fitVlines, (offset_bounds, space_bounds))
+    return result
 
-    jbx = jenkspy.jenks_breaks(xs, nb_class=13)
 
-    # Replace each vertical cluster with a single line
-    # x is cluster mean of x
-    # y is cluster max & min of y
-    nvlines = []
-    for d in range(len(jbx)):
-        count = 0
-        mx = 0
-        nvlines.append([[None, None, None, None]])
-        for ls in vlines:
-            if ls[0][0] > jbx[d] and ls[0][0] < jbx[d + 1]:
-                count += 1
-                mx += ls[0][0] + ls[0][2]
-                if nvlines[d][0][1] is None or ls[0][1] < nvlines[d][0][1]:
-                    nvlines[d][0][1] = ls[0][1]
-                if nvlines[d][0][3] is None or ls[0][3] > nvlines[d][0][3]:
-                    nvlines[d][0][3] = ls[0][3]
-            if count > 0:
-                nvlines[d][0][0] = mx / (count * 2)
-            else:
-                nvlines[d][0][0] = 0
-            nvlines[d][0][2] = nvlines[d][0][0]
-    vlines = np.array(nvlines)
-    # Prune missing clusters and short lines and adjust full lines to more than full length
-    nvmin = None
-    nvmax = None
-    for ls in vlines:
-        if ls[0][0] == 0:
-            continue  # No lines in cluster
-        if nvmin is None or nvmin > ls[0][1]:
-            nvmin = ls[0][1]
-        if nvmin > ls[0][3]:
-            nvmin = ls[0][3]
-        if nvmax is None or nvmax < ls[0][1]:
-            nvmax = ls[0][1]
-        if nvmax < ls[0][3]:
-            nvmax = ls[0][3]
-    nvlines = []
-    for ls in vlines:
-        if ls[0][0] == 0:
-            continue
-        if (ls[0][3] - ls[0][1]) < 300:
-            continue
-        ls[0][1] = nvmin - 20
-        ls[0][3] = nvmax + 20
-        nvlines.append(ls)
-    vlines = np.array(nvlines)
+# Overplot the line endpoints
+def overplotPoints(ax, pLines):
+    for lsi in range(len(pLines["vertical"])):
+        ls = pLines["vertical"][lsi]
+        ax.add_patch(
+            Circle(
+                (ls[0][0], ls[0][1]),
+                radius=5,
+                facecolor=(1, 0, 0, 1),
+                edgecolor=(1, 0, 0, 1),
+                alpha=1,
+                zorder=200,
+            )
+        )
+        ax.add_patch(
+            Circle(
+                (ls[0][2], ls[0][3]),
+                radius=5,
+                facecolor=(1, 0, 0, 1),
+                edgecolor=(1, 0, 0, 1),
+                alpha=1,
+                zorder=200,
+            )
+        )
 
-    # Cluster the lines in the y direction
-    ys = []
-    for line in hlines:
-        ys.append(line[0][1])
-        ys.append(line[0][3])
 
-    jby = jenkspy.jenks_breaks(ys, nb_class=8)
-
-    # Replace each horizontal cluster with a single line
-    # y is cluster mean of y
-    # x is cluster max & min of x
-    nhlines = []
-    for d in range(len(jby)):
-        count = 0
-        my = 0
-        nhlines.append([[None, None, None, None]])
-        for ls in hlines:
-            if ls[0][1] > jby[d] and ls[0][1] < jby[d + 1]:
-                count += 1
-                my += ls[0][1] + ls[0][3]
-                if nhlines[d][0][0] is None or ls[0][0] < nhlines[d][0][0]:
-                    nhlines[d][0][0] = ls[0][0]
-                if nhlines[d][0][2] is None or ls[0][2] > nhlines[d][0][2]:
-                    nhlines[d][0][2] = ls[0][2]
-            if count > 0:
-                nhlines[d][0][1] = my / (count * 2)
-            else:
-                nhlines[d][0][1] = 0
-            nhlines[d][0][3] = nhlines[d][0][1]
-    hlines = np.array(nhlines)
-    # Prune missing clusters and short lines and adjust full lines
-    #  to more than full length
-    nhmin = None
-    nhmax = None
-    for ls in hlines:
-        if ls[0][1] == 0:
-            continue  # No lines in cluster
-        if nhmin is None or nhmin > ls[0][0]:
-            nhmin = ls[0][0]
-        if nhmin > ls[0][2]:
-            nhmin = ls[0][2]
-        if nhmax is None or nhmax < ls[0][0]:
-            nhmax = ls[0][0]
-        if nhmax < ls[0][2]:
-            nhmax = ls[0][2]
-    nhlines = []
-    for ls in hlines:
-        if ls[0][1] == 0:
-            continue
-        if (ls[0][2] - ls[0][0]) < 300:
-            continue
-        ls[0][0] = nhmin - 20
-        ls[0][2] = nhmax + 20
-        nhlines.append(ls)
-    hlines = np.array(nhlines)
-    return {"vertical": vlines, "horizontal": hlines}
+# Overplot the line segment fit
+def overplotFit(ax, fit):
+    for lsi in range(11):
+        ax.add_line(
+            Line2D(
+                [fit[0] + fit[1] * lsi, fit[0] + fit[1] * lsi],
+                [200, 1200],
+                linewidth=2,
+                color="blue",
+                zorder=150,
+            )
+        )
 
 
 # Overplot the line segments
