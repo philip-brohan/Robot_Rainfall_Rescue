@@ -1,0 +1,24 @@
+name: rrr-azure
+
+# This environment is for running the Robot Rainfall Rescue project
+# on Azure ML. 
+
+channels:
+  - conda-forge
+dependencies:
+# Basics
+  - python=3.12
+  - matplotlib=3.10
+# Huggingface transformers library
+  - huggingface_hub=0.30
+  - transformers=4.51.0
+
+# Torch backend for transformers
+  - pip
+  - pip:
+      - torch
+      - torchvision
+      - accelerate
+      - compressed-tensors
+
+
