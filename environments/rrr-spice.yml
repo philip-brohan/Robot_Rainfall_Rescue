@@ -9,12 +9,13 @@ dependencies:
   - sphinx  # Documentation
 # Huggingface transformers library
   - huggingface_hub=0.30
-  - transformers=4.51.0
-
+  - transformers=4.51.3
+  
 # Download images from Google Drive
   - rclone=1.69
 
 # Azure
+  - marshmallow=3.26  # V4 breaks azure login
   - azure-ai-ml = 1.23
   - azure-identity = 1.21
   - azure-storage-file-datalake = 12.19
@@ -28,6 +29,17 @@ dependencies:
       - hf_xet
       - accelerate
       - compressed-tensors
+      - evaluate
+      - bitsandbytes
+      - trl
+      - peft
+      - protobuf
+      - sentencepiece
+      - flash-attention
+      - datasets
+      - tensorboardX
+      - tensorboard
+     
 
 variables:
 # Tell python to look for modules in the root directory of the project

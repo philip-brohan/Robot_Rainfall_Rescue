@@ -11,7 +11,7 @@ dependencies:
   - matplotlib=3.10
 # Huggingface transformers library
   - huggingface_hub=0.30
-  - transformers=4.51.0
+  - transformers=4.51.3
 
 # Torch backend for transformers
   - pip
@@ -20,5 +20,14 @@ dependencies:
       - torchvision
       - accelerate
       - compressed-tensors
+      - evaluate
+      - bitsandbytes
+      - trl
+      - peft
+      - protobuf
+      - sentencepiece
+      - datasets
+      - flash-attention
+      - tensorboardX
 
 

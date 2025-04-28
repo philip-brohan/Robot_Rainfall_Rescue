@@ -93,6 +93,10 @@ for f in file_path:
         if os.path.exists(local_name) and not args.overwrite:
             pass
         else:
+            # Make any necessary drectories
+            local_dir = os.path.dirname(local_name)
+            if not os.path.exists(local_dir):
+                os.makedirs(local_dir)
             # Download the file
             with open(local_name, "wb") as data:
                 file_client = file_system_client.get_file_client(f.name)

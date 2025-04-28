@@ -6,11 +6,13 @@ from PIL import Image
 
 
 # Get all the image/csv names
-def get_index_list():
+def get_index_list(max_n=None):
     image_path = os.path.join(
         f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/from_Ed/images"
     )
     result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
+    if max_n is not None:
+        result = result[:max_n]
     return result
 
 
