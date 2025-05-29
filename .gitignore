@@ -144,9 +144,5 @@ Thumbs.db
 # SCRATCH dir
 SCRATCH
 
-# Temporary models
-ERA5_P_to_ERA5_P
-TWCR_P_to_CRU
-TWCR_multi
-TWCR_P_to_ERA5_P
-TWCR_P_to_TWCR_P
+# Local vscode config
+.vscode/
