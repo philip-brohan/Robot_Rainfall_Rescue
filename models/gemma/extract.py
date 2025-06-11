@@ -109,7 +109,7 @@ for q in Questions:
     Results.append(decoded[decoded.find("{") : decoded.rfind("}") + 1])
 
 # Store the extracted values in a file
-opfile = f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/extracted/{args.model_id}/{args.label}.json"
+opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
 os.makedirs(os.path.dirname(opfile), exist_ok=True)
 with open(opfile, "w") as f:
     for result in Results:

@@ -29,7 +29,7 @@ ml_client = MLClient(
 # Define the environment from a conda yml file
 bindir = os.path.abspath(os.path.dirname(__file__))
 env_docker_conda = Environment(
-    image="mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04",
+    image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04",
     conda_file="%s/../environments/rrr-azure.yml" % bindir,
     name="RRR-Azure",
     description="Robot Rainfall Rescue environment",

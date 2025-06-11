@@ -7,9 +7,7 @@ from PIL import Image
 
 # Get all the image/csv names
 def get_index_list(max_n=None):
-    image_path = os.path.join(
-        f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/from_Ed/images"
-    )
+    image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images")
     result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
     if max_n is not None:
         result = result[:max_n]
@@ -46,11 +44,9 @@ def load_pair(label):
     Returns:
         tuple: A tuple containing the image and the CSV file path.
     """
-    image_path = os.path.join(
-        f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/from_Ed/images", f"{label}.jpg"
-    )
+    image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images", f"{label}.jpg")
     csv_path = os.path.join(
-        f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/from_Ed/csvs",
+        f"{os.getenv('PDIR')}/from_Ed/csvs",
         f"{label}.csv",
     )
 

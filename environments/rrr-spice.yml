@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
 # Basics
-  - python=3.12
+  - python=3.10
   - matplotlib=3.10
   - black  # Code formatter
   - sphinx  # Documentation
@@ -48,10 +48,13 @@ variables:
 # Replace with the path to your project directory root.
   PYTHONPATH: /home/users/philip.brohan/Projects/Robot_Rainfall_Rescue
 
+# Project data path
+  PDIR: /data/users/philip.brohan/Robot_Rainfall_Rescue
+
 # Tell huggingface where to store model weights
   HF_HOME: /data/users/philip.brohan/huggingface
 
 # Azure ML subscription, workspace and resource group
   AZML_SUBSCRIPTION_ID: 79c7890c-2a30-44ef-aa8d-419d25b7bb8e
-  AZML_WORKSPACE_NAME: ai4climate-scratch
-  AZML_RESOURCE_GROUP: rg-AI4-Climate
+  AZML_WORKSPACE_NAME: mlw-llmdatarescue-uksouth-01
+  AZML_RESOURCE_GROUP: rg-climate-llmdatarescue

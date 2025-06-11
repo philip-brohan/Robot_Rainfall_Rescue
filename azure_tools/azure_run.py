@@ -95,12 +95,12 @@ command_job = command(
     environment="RRR-Azure@latest",
     code="/home/users/philip.brohan/Projects/Robot_Rainfall_Rescue",
     outputs={
-        "SCRATCH": Output(
+        "PDIR": Output(
             type=AssetTypes.URI_FOLDER,
             path=(
                 "azureml://subscriptions/%s/"
                 + "resourcegroups/%s/workspaces/%s/"
-                + "datastores/dcvaelake_copper/paths/SCRATCH/"
+                + "datastores/large_datastore/paths/Robot_Rainfall_Rescue/"
             )
             % (
                 os.getenv("AZML_SUBSCRIPTION_ID"),
@@ -111,7 +111,7 @@ command_job = command(
         ),
     },
     environment_variables={
-        "SCRATCH": "${{outputs.SCRATCH}}",
+        "PDIR": "${{outputs.PDIR}}",
         "HF_HOME": "${{outputs.HF_HOME}}",
         "HF_KEY": hf_key,
     },

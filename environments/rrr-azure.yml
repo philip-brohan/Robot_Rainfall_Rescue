@@ -7,7 +7,7 @@ channels:
   - conda-forge
 dependencies:
 # Basics
-  - python=3.12
+  - python=3.10
   - matplotlib=3.10
 # Huggingface transformers library
   - huggingface_hub=0.30

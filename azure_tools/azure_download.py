@@ -28,10 +28,14 @@ parser.add_argument(
     type=str,
     help="Storage account name",
     required=False,
-    default="dcvaelake",
+    default="sallmdatarescue02",
 )
 parser.add_argument(
-    "--file_system", type=str, help="File system name", required=False, default="copper"
+    "--file_system",
+    type=str,
+    help="File system name",
+    required=False,
+    default="default",
 )
 parser.add_argument("--overwrite", action="store_true", help="Overwrite existing files")
 args = parser.parse_args()
