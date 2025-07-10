@@ -6,7 +6,7 @@ import sys
 from PIL import Image
 import random
 import argparse
-from utils.hf import HFlogin
+from RR_utils.hf import HFlogin
 
 HFlogin()  # Connect to Huggingface Hub - only needed for initial model weights download
 
