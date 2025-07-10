@@ -1,0 +1,8 @@
+# Stuff that doesn't need to be uploaded to Azure to run scripts
+.git/
+.gitignore
+.amlignore
+.vscode/
+azure_tools/
+docs/
+environment/
