@@ -109,13 +109,27 @@ command_job = command(
             ),
             mode=InputOutputModes.RW_MOUNT,
         ),
+        "HF_HOME": Output(
+            type=AssetTypes.URI_FOLDER,
+            path=(
+                "azureml://subscriptions/%s/"
+                + "resourcegroups/%s/workspaces/%s/"
+                + "datastores/large_datastore/paths/HF_HOME/"
+            )
+            % (
+                os.getenv("AZML_SUBSCRIPTION_ID"),
+                os.getenv("AZML_RESOURCE_GROUP"),
+                os.getenv("AZML_WORKSPACE_NAME"),
+            ),
+            mode=InputOutputModes.RW_MOUNT,
+        ),
     },
     environment_variables={
         "PDIR": "${{outputs.PDIR}}",
         "HF_HOME": "${{outputs.HF_HOME}}",
         "HF_KEY": hf_key,
     },
-    command="export PYTHONPATH=$(pwd):$PYTHONPATH ; " + "%s" % cmd,
+    command="export PYTHONPATH=$(pwd) ; " + "%s" % cmd,
 )
 
 if args.dryrun:

@@ -4,16 +4,22 @@
 # Output the extracted data as a JSON structure
 
 import os
-from utils.hf import HFlogin
+from RR_utils.hf import HFlogin
+from RR_utils.image import cut_image
 from rainfall_rescue.utils.pairs import get_index_list, load_pair
 
 HFlogin()
 
-from transformers import AutoProcessor, Gemma3ForConditionalGeneration
+from transformers import (
+    AutoProcessor,
+    Gemma3ForConditionalGeneration,
+    BitsAndBytesConfig,
+)
 from PIL import Image
 import torch
 import argparse
 import random
+import json
 
 # Specify the model ID and image label
 parser = argparse.ArgumentParser()
@@ -22,7 +28,7 @@ parser.add_argument(
     help="Model ID",
     type=str,
     required=False,
-    default="google/gemma-3-4b-it",
+    default="google/gemma-3-27b-it",
 )
 parser.add_argument(
     "--label",
@@ -30,6 +36,20 @@ parser.add_argument(
     type=str,
     required=False,
     default=None,
+)
+parser.add_argument(
+    "--patch_size",
+    help="Image patch size (pixels)",
+    type=int,
+    required=False,
+    default=600,
+)
+parser.add_argument(
+    "--no_quantize",
+    help="Don't quantize the model",
+    action="store_true",
+    required=False,
+    default=False,
 )
 args = parser.parse_args()
 
@@ -41,10 +61,34 @@ if args.label is None:
 img, csv = load_pair(args.label)
 print(csv["Years"])
 print(csv["Totals"])
+# Cut the image into blocks
+if args.patch_size is not None:
+    blocks = cut_image(img, args.patch_size, overlap=0.1)
+else:
+    blocks = [img]  # Use the whole image if no patch size is specified
+print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
+
+model_kwargs = dict(
+    attn_implementation="eager",  # Use "flash_attention_2" when running on Ampere or newer GPU
+    torch_dtype=torch.bfloat16,  # What torch dtype to use, defaults to auto
+    device_map="auto",  # Let torch decide how to load the model
+)
+
+# BitsAndBytesConfig int-4 config
+if not args.no_quantize:
+    print("Using quantization for the model")
+    model_kwargs["quantization_config"] = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=model_kwargs["torch_dtype"],
+        bnb_4bit_quant_storage=model_kwargs["torch_dtype"],
+    )
+
 
 # Load the model and processor
 model = Gemma3ForConditionalGeneration.from_pretrained(
-    args.model_id, device_map="auto"
+    args.model_id, **model_kwargs
 ).eval()
 
 processor = AutoProcessor.from_pretrained(args.model_id)
@@ -78,12 +122,12 @@ for q in Questions:
         },
         {
             "role": "user",
-            "content": [
-                {"type": "image", "image": img},
+            "content": [{"type": "image", "image": block} for block in blocks]
+            + [
                 {
                     "type": "text",
                     "text": q,
-                },
+                }
             ],
         },
     ]
@@ -111,6 +155,12 @@ for q in Questions:
 # Store the extracted values in a file
 opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
 os.makedirs(os.path.dirname(opfile), exist_ok=True)
+json_data = {}
+for result in Results:
+    try:
+        json_data.update(json.loads(result))
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        print(f"Result: {result}")
 with open(opfile, "w") as f:
-    for result in Results:
-        f.write(result + "\n")
+    json.dump(json_data, f, indent=4)

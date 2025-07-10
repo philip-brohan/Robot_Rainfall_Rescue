@@ -35,7 +35,7 @@ if args.label is None:
 img, csv = load_pair(args.label)
 
 # Load the model extracted data
-opfile = f"{os.getenv('SCRATCH')}/Robot_Rainfall_Rescue/extracted/{args.model_id}/{args.label}.json"
+opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
 with open(opfile, "r") as f:
     extracted = json.loads(f.read())
 
@@ -120,40 +120,44 @@ for year in years:
     for month in monthNumbers.keys():
         try:
             exv = extracted["%s" % (year)][month]
-            if exv == "null":
-                exv = 0.0
+            if exv == "null" or exv is None:
+                exv = -9.99
             rrv = csv[month][year - min(years)]
-            if rrv == "":
-                rrv = 0.0
-            if exv == rrv:
-                ax_digitised.text(
-                    year,
-                    monthNumbers[month],
-                    exv,
-                    ha="center",
-                    va="center",
-                    fontsize=12,
-                    color="black",
-                )
-            else:
-                ax_digitised.text(
-                    year,
-                    monthNumbers[month],
-                    "%.2f" % exv,
-                    ha="center",
-                    va="center",
-                    fontsize=12,
-                    color="red",
-                )
-                ax_digitised.text(
-                    year,
-                    monthNumbers[month] + 0.5,
-                    "%.2f" % float(rrv),
-                    ha="center",
-                    va="center",
-                    fontsize=12,
-                    color="blue",
-                )
+            if rrv == "" or rrv is None:
+                rrv = -9.99
+            try:
+                if "%.2f" % float(exv) == "%.2f" % float(rrv):
+                    ax_digitised.text(
+                        year,
+                        monthNumbers[month],
+                        exv,
+                        ha="center",
+                        va="center",
+                        fontsize=12,
+                        color="black",
+                    )
+                else:
+                    ax_digitised.text(
+                        year,
+                        monthNumbers[month],
+                        "%.2f" % float(exv),
+                        ha="center",
+                        va="center",
+                        fontsize=12,
+                        color="red",
+                    )
+                    ax_digitised.text(
+                        year,
+                        monthNumbers[month] + 0.5,
+                        "%.2f" % float(rrv),
+                        ha="center",
+                        va="center",
+                        fontsize=12,
+                        color="blue",
+                    )
+            except Exception as e:
+                print(rrv, exv)
+                print(e)
         except KeyError as e:
             continue
 

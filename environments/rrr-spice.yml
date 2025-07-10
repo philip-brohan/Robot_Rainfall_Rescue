@@ -8,8 +8,8 @@ dependencies:
   - black  # Code formatter
   - sphinx  # Documentation
 # Huggingface transformers library
-  - huggingface_hub=0.30
-  - transformers=4.51.3
+  - huggingface_hub=0.33
+  - transformers>=4.51.3
   
 # Download images from Google Drive
   - rclone=1.69
@@ -24,19 +24,20 @@ dependencies:
 # Torch backend for transformers
   - pip
   - pip:
-      - torch
+      - torch>=2.4.0
       - torchvision
       - hf_xet
-      - accelerate
+      - accelerate==1.4.0
       - compressed-tensors
-      - evaluate
-      - bitsandbytes
-      - trl
-      - peft
+      - evaluate==0.4.3
+      - bitsandbytes==0.45.3
+      - trl==0.15.2
+      - peft==0.14.0
+      - pillow==11.1.0
       - protobuf
       - sentencepiece
       - flash-attention
-      - datasets
+      - datasets==3.3.2
       - tensorboardX
       - tensorboard
      
@@ -49,7 +50,7 @@ variables:
   PYTHONPATH: /home/users/philip.brohan/Projects/Robot_Rainfall_Rescue
 
 # Project data path
-  PDIR: /data/users/philip.brohan/Robot_Rainfall_Rescue
+  PDIR: /data/scratch/philip.brohan/Robot_Rainfall_Rescue
 
 # Tell huggingface where to store model weights
   HF_HOME: /data/users/philip.brohan/huggingface

@@ -10,24 +10,30 @@ dependencies:
   - python=3.10
   - matplotlib=3.10
 # Huggingface transformers library
-  - huggingface_hub=0.30
-  - transformers=4.51.3
+  - huggingface_hub=0.33
+  - transformers>=4.53.1
 
 # Torch backend for transformers
   - pip
   - pip:
-      - torch
+      - torch>=2.4.0
       - torchvision
-      - accelerate
+      - accelerate==1.4.0
       - compressed-tensors
-      - evaluate
-      - bitsandbytes
-      - trl
-      - peft
+      - evaluate==0.4.3
+      - bitsandbytes>=0.43.3
+      - trl==0.15.2
+      - pillow==11.1.0
+      - peft>=0.15.0
       - protobuf
       - sentencepiece
-      - datasets
+      - datasets==3.3.2
       - flash-attention
       - tensorboardX
+      - ipdb>=0.13.13
+      - einx==0.1.3
+      - einops==0.7.0
+      - mediapy==1.1.6
+      - loguru>=0.7.0
 
 
