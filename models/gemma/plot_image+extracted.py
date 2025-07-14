@@ -116,17 +116,25 @@ monthNumbers = {
     "Dec": 12,
     "December": 12,
 }
+
+
+# Present extracted data as a %.2f string as far as possible
+def format_value(value):
+    if value is None or value == "null":
+        return "null"
+    try:
+        return "%.2f" % float(value)
+    except ValueError:
+        return str(value)
+
+
 for year in years:
     for month in monthNumbers.keys():
         try:
-            exv = extracted["%s" % (year)][month]
-            if exv == "null" or exv is None:
-                exv = -9.99
-            rrv = csv[month][year - min(years)]
-            if rrv == "" or rrv is None:
-                rrv = -9.99
+            exv = format_value(extracted["%s" % (year)][month])
+            rrv = format_value(csv[month][year - min(years)])
             try:
-                if "%.2f" % float(exv) == "%.2f" % float(rrv):
+                if exv == rrv:
                     ax_digitised.text(
                         year,
                         monthNumbers[month],
@@ -140,7 +148,7 @@ for year in years:
                     ax_digitised.text(
                         year,
                         monthNumbers[month],
-                        "%.2f" % float(exv),
+                        exv,
                         ha="center",
                         va="center",
                         fontsize=12,
@@ -149,7 +157,7 @@ for year in years:
                     ax_digitised.text(
                         year,
                         monthNumbers[month] + 0.5,
-                        "%.2f" % float(rrv),
+                        rrv,
                         ha="center",
                         va="center",
                         fontsize=12,

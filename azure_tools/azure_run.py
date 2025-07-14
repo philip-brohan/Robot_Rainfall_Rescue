@@ -128,6 +128,7 @@ command_job = command(
         "PDIR": "${{outputs.PDIR}}",
         "HF_HOME": "${{outputs.HF_HOME}}",
         "HF_KEY": hf_key,
+        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
     },
     command="export PYTHONPATH=$(pwd) ; " + "%s" % cmd,
 )

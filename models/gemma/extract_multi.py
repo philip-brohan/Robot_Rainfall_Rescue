@@ -28,14 +28,14 @@ parser.add_argument(
     help="Model ID",
     type=str,
     required=False,
-    default="google/gemma-3-12b-it",
+    default="google/gemma-3-27b-it",
 )
 parser.add_argument(
-    "--label",
-    help="Image identifier",
-    type=str,
+    "--image_count",
+    help="No. of images to process",
+    type=int,
     required=False,
-    default=None,
+    default=10,
 )
 parser.add_argument(
     "--patch_size",
@@ -52,21 +52,6 @@ parser.add_argument(
     default=False,
 )
 args = parser.parse_args()
-
-if args.label is None:
-    args.label = random.choice(get_index_list())
-    print(f"Label not specified. Using random label: {args.label}")
-
-# Load the image and CSV data
-img, csv = load_pair(args.label)
-print(csv["Years"])
-print(csv["Totals"])
-# Cut the image into blocks
-if args.patch_size is not None:
-    blocks = cut_image(img, args.patch_size, overlap=0.1)
-else:
-    blocks = [img]  # Use the whole image if no patch size is specified
-print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
 
 model_kwargs = dict(
     attn_implementation="eager",  # Use "flash_attention_2" when running on Ampere or newer GPU
@@ -87,19 +72,11 @@ if not args.no_quantize:
 
 
 # Load the model and processor
-if os.path.exists(f"{os.getenv('PDIR')}/{args.model_id}"):
-    model_dir = f"{os.getenv('PDIR')}/{args.model_id}"
-    print(f"Loading model from local directory: {model_dir}")
-    model = Gemma3ForConditionalGeneration.from_pretrained(
-        model_dir, **model_kwargs
-    ).eval()
-    processor = AutoProcessor.from_pretrained(model_dir)
+model = Gemma3ForConditionalGeneration.from_pretrained(
+    args.model_id, **model_kwargs
+).eval()
 
-else:
-    model = Gemma3ForConditionalGeneration.from_pretrained(
-        args.model_id, **model_kwargs
-    ).eval()
-    processor = AutoProcessor.from_pretrained(args.model_id)
+processor = AutoProcessor.from_pretrained(args.model_id)
 
 # System prompt
 s_prompt = (
@@ -121,62 +98,68 @@ Questions = [
     "For each or the 10 years, output the rainfall for each of the 12 months, in the format {year: {'January': value, 'February': value, ...}}. ",
 ]
 
-Results = []
-for q in Questions:
-    messages = [
-        {
-            "role": "system",
-            "content": [{"type": "text", "text": s_prompt}],
-        },
-        {
-            "role": "user",
-            "content": [{"type": "image", "image": block} for block in blocks]
-            + [
-                {
-                    "type": "text",
-                    "text": q,
-                }
-            ],
-        },
-    ]
 
-    inputs = processor.apply_chat_template(
-        messages,
-        add_generation_prompt=True,
-        tokenize=True,
-        return_dict=True,
-        return_tensors="pt",
-    ).to(model.device, dtype=torch.bfloat16)
+for icount in range(args.image_count):
+    args.label = random.choice(get_index_list())
+    print(f"Using random label: {args.label}")
 
-    input_len = inputs["input_ids"].shape[-1]
+    # Load the image and CSV data
+    img, csv = load_pair(args.label)
+    # Cut the image into blocks
+    if args.patch_size is not None:
+        blocks = cut_image(img, args.patch_size, overlap=0.1)
+    else:
+        blocks = [img]  # Use the whole image if no patch size is specified
+    print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
 
-    with torch.inference_mode():
-        generation = model.generate(
-            **inputs, max_new_tokens=2000, do_sample=False, top_k=None, top_p=None
-        )
-        generation = generation[0][input_len:]
+    Results = []
+    for q in Questions:
+        messages = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": s_prompt}],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "image", "image": block} for block in blocks]
+                + [
+                    {
+                        "type": "text",
+                        "text": q,
+                    }
+                ],
+            },
+        ]
 
-    decoded = processor.decode(generation, skip_special_tokens=True)
-    print(decoded)
-    Results.append(decoded[decoded.find("{") : decoded.rfind("}") + 1])
+        inputs = processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        ).to(model.device, dtype=torch.bfloat16)
 
-# Store the extracted values in a file
-opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
-os.makedirs(os.path.dirname(opfile), exist_ok=True)
+        input_len = inputs["input_ids"].shape[-1]
 
-for result in Results:
-    with open(opfile, "a") as f:
-        f.write(result)
+        with torch.inference_mode():
+            generation = model.generate(
+                **inputs, max_new_tokens=2000, do_sample=False, top_k=None, top_p=None
+            )
+            generation = generation[0][input_len:]
 
+        decoded = processor.decode(generation, skip_special_tokens=True)
+        print(decoded)
+        Results.append(decoded[decoded.find("{") : decoded.rfind("}") + 1])
 
-# json_data = {}
-# for result in Results:
-#     try:
-#         json_data.update(json.loads(result))
-#     except json.JSONDecodeError as e:
-#         print(f"Error decoding JSON: {e}")
-#         with open(opfile, "w") as f:
-#             f.write(result)
-#         raise e
-# with open(opfile, "w") as f:
-#     json.dump(json_data, f, indent=4)
+    # Store the extracted values in a file
+    opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
+    os.makedirs(os.path.dirname(opfile), exist_ok=True)
+    json_data = {}
+    for result in Results:
+        try:
+            json_data.update(json.loads(result))
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            print(f"Result: {result}")
+    with open(opfile, "w") as f:
+        json.dump(json_data, f, indent=4)
