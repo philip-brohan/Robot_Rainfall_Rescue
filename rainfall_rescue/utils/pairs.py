@@ -2,6 +2,8 @@
 
 import os
 import csv
+import json
+
 from PIL import Image
 
 
@@ -20,6 +22,7 @@ def load_station_csv(csv_path):
     with open(csv_path, mode="r") as file:
         reader = csv.reader(file)
         for index, row in enumerate(reader):
+            row = ["null" if x == "" else x for x in row]
             if index == 0:
                 result["Name"] = row[0]
             if index == 2:
@@ -31,6 +34,22 @@ def load_station_csv(csv_path):
             if index == 17:
                 result["Totals"] = row[1:11]
     return result
+
+
+# Convert the csv data to a json string
+# To serve as target for the model
+def csv_to_json(csv_data):
+    """
+    Convert CSV data to a JSON string.
+
+    Args:
+        csv_data (dict): The CSV data as a dictionary.
+
+    Returns:
+        str: JSON string representation of the CSV data.
+    """
+
+    return json.dumps(csv_data, separators=(",", ":"))
 
 
 # Load a pair of image and csv data

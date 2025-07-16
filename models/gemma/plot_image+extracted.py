@@ -2,9 +2,16 @@
 
 # Plot a 10-year monthly rainfall image and the data Gemma got from it
 
-from rainfall_rescue.utils.pairs import get_index_list, load_pair
+from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
+from rainfall_rescue.utils.validate import (
+    plot_image,
+    plot_metadata,
+    plot_monthly_table,
+    plot_totals,
+)
 import random
 import os
+import re
 import json
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -33,11 +40,15 @@ if args.label is None:
 
 # load the image/data pair
 img, csv = load_pair(args.label)
+jcsv = json.loads(csv_to_json(csv))
 
 # Load the model extracted data
 opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
 with open(opfile, "r") as f:
-    extracted = json.loads(f.read())
+    raw_j = f.read()
+    fixed_j = re.sub(r"(?<!\d)\.(\d+)", r"0.\1", raw_j)  # Fix numbers like .12 -> 0.12
+    fixed_j = re.sub(r"(\d+):", r'"\1":', fixed_j)  # Fix keys like 2023: -> "2023":
+    extracted = json.loads(fixed_j)
 
 # print(extracted)
 
@@ -56,119 +67,20 @@ canvas = FigureCanvas(fig)
 
 # Image in the left
 ax_original = fig.add_axes([0.01, 0.02, 0.47, 0.96])
-ax_original.set_axis_off()
-imgplot = ax_original.imshow(img, zorder=10)
+plot_image(ax_original, img)
 
+# Metadata top right
+ax_metadata = fig.add_axes([0.52, 0.8, 0.47, 0.15])
+plot_metadata(ax_metadata, extracted, jcsv)
 
-years = [int(x) for x in csv["Years"]]
-years = sorted(years)
 
 # Digitised numbers on the right
 ax_digitised = fig.add_axes([0.52, 0.13, 0.47, 0.63])
-ax_digitised.set_xlim(years[0] - 0.5, years[-1] + 0.5)
-ax_digitised.set_xticks(range(years[0], years[-1] + 1))
-ax_digitised.set_xticklabels(years)
-ax_digitised.set_ylim(0.5, 13)
-ax_digitised.set_yticks(range(1, 13))
-ax_digitised.set_yticklabels(
-    (
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-    )
-)
-ax_digitised.xaxis.set_ticks_position("top")
-ax_digitised.xaxis.set_label_position("top")
-ax_digitised.invert_yaxis()
-ax_digitised.set_aspect("auto")
+plot_monthly_table(ax_digitised, extracted, jcsv)
 
-monthNumbers = {
-    "Jan": 1,
-    "January": 1,
-    "Feb": 2,
-    "February": 2,
-    "Mar": 3,
-    "March": 3,
-    "Apr": 4,
-    "April": 4,
-    "May": 5,
-    "Jun": 6,
-    "June": 6,
-    "Jul": 7,
-    "July": 7,
-    "Aug": 8,
-    "August": 8,
-    "Sep": 9,
-    "September": 9,
-    "Oct": 10,
-    "October": 10,
-    "Nov": 11,
-    "November": 11,
-    "Dec": 12,
-    "December": 12,
-}
-
-
-# Present extracted data as a %.2f string as far as possible
-def format_value(value):
-    if value is None or value == "null":
-        return "null"
-    try:
-        return "%.2f" % float(value)
-    except ValueError:
-        return str(value)
-
-
-for year in years:
-    for month in monthNumbers.keys():
-        try:
-            exv = format_value(extracted["%s" % (year)][month])
-            rrv = format_value(csv[month][year - min(years)])
-            try:
-                if exv == rrv:
-                    ax_digitised.text(
-                        year,
-                        monthNumbers[month],
-                        exv,
-                        ha="center",
-                        va="center",
-                        fontsize=12,
-                        color="black",
-                    )
-                else:
-                    ax_digitised.text(
-                        year,
-                        monthNumbers[month],
-                        exv,
-                        ha="center",
-                        va="center",
-                        fontsize=12,
-                        color="red",
-                    )
-                    ax_digitised.text(
-                        year,
-                        monthNumbers[month] + 0.5,
-                        rrv,
-                        ha="center",
-                        va="center",
-                        fontsize=12,
-                        color="blue",
-                    )
-            except Exception as e:
-                print(rrv, exv)
-                print(e)
-        except KeyError as e:
-            continue
-
+# Totals along the bottom
+ax_totals = fig.add_axes([0.52, 0.05, 0.47, 0.07])
+plot_totals(ax_totals, extracted, jcsv)
 
 # Render
 fig.savefig(
