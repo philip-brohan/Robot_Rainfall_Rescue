@@ -6,7 +6,7 @@
 import os
 from RR_utils.hf import HFlogin
 from RR_utils.image import cut_image
-from rainfall_rescue.utils.pairs import get_index_list, load_pair
+from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
 
 HFlogin()
 
@@ -15,11 +15,9 @@ from transformers import (
     Gemma3ForConditionalGeneration,
     BitsAndBytesConfig,
 )
-from PIL import Image
 import torch
 import argparse
 import random
-import json
 
 # Specify the model ID and image label
 parser = argparse.ArgumentParser()
@@ -51,6 +49,13 @@ parser.add_argument(
     required=False,
     default=False,
 )
+parser.add_argument(
+    "--random_seed",
+    help="Control the set of 'random'; choices",
+    type=int,
+    required=False,
+    default=None,
+)
 args = parser.parse_args()
 
 model_kwargs = dict(
@@ -72,32 +77,55 @@ if not args.no_quantize:
 
 
 # Load the model and processor
-model = Gemma3ForConditionalGeneration.from_pretrained(
-    args.model_id, **model_kwargs
-).eval()
+if os.path.exists(f"{os.getenv('PDIR')}/{args.model_id}"):
+    model_dir = f"{os.getenv('PDIR')}/{args.model_id}"
+    print(f"Loading model from local directory: {model_dir}")
+    model = Gemma3ForConditionalGeneration.from_pretrained(
+        model_dir, **model_kwargs
+    ).eval()
+    processor = AutoProcessor.from_pretrained(model_dir)
 
-processor = AutoProcessor.from_pretrained(args.model_id)
+else:
+    model = Gemma3ForConditionalGeneration.from_pretrained(
+        args.model_id, **model_kwargs
+    ).eval()
+    processor = AutoProcessor.from_pretrained(args.model_id)
+
 
 # System prompt
 s_prompt = (
     "You are a climate scientist. Your task is to extract climate data from pages containing historical observations. "
-    + "The pages you are working on are records of monthly rainfall from the UK Met Office. "
-    + "Each page contains a data table with values for each calendar month, in each of ten years. "
+    + "The page you are working on is a record of monthly rainfall from one UK weather station. "
+    + "At the top of each page is the name of a weather station, and the number of the station. "
+    + "The station name will follow the words 'RAINFALL at' in the top centre of the page. "
+    + "The station number will be in the top-right corner of the page. "
+    + "The page contains a table with monthly rainfall data for ten years,  "
+    + "The first row of the table gives the years. There will be 10 years. The first year will end in a 1, and the last year in a 0."
+    + "The first column of the table is the month name, starting with January at the top and December at the bottom. "
+    + "The bulk of the table gives values for each calendar month, in each of the ten years. "
     + "Each column is the data for one year, January at the top, December at the bottom. "
-    + "Each row is the data for one calendar month, with January at the top and December at the bottom. "
-    + "The first column is the month name. "
-    + "The last column is the average rainfall, for each year, in the calendar month"
+    + "There is sometimes an extra column on the right (after the last year) - ignore this column. "
+    + "Each row is the data for one calendar month, with the first year on the left and the last year on the right. "
     + "At the bottom of the table is an extra row with totals for each year. "
     + "Sometimes some of the data values are missing, left blank. For missing values, return 'null'."
     + "Report the data in a JSON format. Don't include any other text. "
 )
 
-Questions = [
-    # "Output the rainfall totals for each of the 10 years. In the format {'Totals: {year: value, year: value,}}. ",
-    # "Output the mean rainfall for each month in the format {'Means': {'January': value, 'February': value, ...}}. ",
-    "For each or the 10 years, output the rainfall for each of the 12 months, in the format {year: {'January': value, 'February': value, ...}}. ",
-]
+u_prompt = (
+    "Output the data as a JSON object with the following structure:\n "
+    + '{"Name":"<name>",'
+    + '"Number":"<number>",'
+    + '"Years":[<year1>,<year2>, ...],'
+    + '"January":[<value1>,<value2>, ...],'
+    + '"February":[<value1>,<value2>, ...],'
+    + " And so on for months April to December"
+    + '"Totals": [<total1>,<total2>,...]}'
+)
 
+
+if args.random_seed is not None:
+    print(f"Setting random seed to {args.random_seed}")
+    random.seed(args.random_seed)
 
 for icount in range(args.image_count):
     args.label = random.choice(get_index_list())
@@ -112,54 +140,47 @@ for icount in range(args.image_count):
         blocks = [img]  # Use the whole image if no patch size is specified
     print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
 
-    Results = []
-    for q in Questions:
-        messages = [
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": s_prompt}],
-            },
-            {
-                "role": "user",
-                "content": [{"type": "image", "image": block} for block in blocks]
-                + [
-                    {
-                        "type": "text",
-                        "text": q,
-                    }
-                ],
-            },
-        ]
+    messages = [
+        {
+            "role": "system",
+            "content": [{"type": "text", "text": s_prompt}],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "image", "image": block} for block in blocks]
+            + [
+                {
+                    "type": "text",
+                    "text": u_prompt,
+                }
+            ],
+        },
+    ]
 
-        inputs = processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(model.device, dtype=torch.bfloat16)
+    inputs = processor.apply_chat_template(
+        messages,
+        add_generation_prompt=True,
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",
+    ).to(model.device, dtype=torch.bfloat16)
 
-        input_len = inputs["input_ids"].shape[-1]
+    input_len = inputs["input_ids"].shape[-1]
 
-        with torch.inference_mode():
-            generation = model.generate(
-                **inputs, max_new_tokens=2000, do_sample=False, top_k=None, top_p=None
-            )
-            generation = generation[0][input_len:]
+    with torch.inference_mode():
+        generation = model.generate(
+            **inputs, max_new_tokens=5000, do_sample=False, top_k=None, top_p=None
+        )
+        generation = generation[0][input_len:]
 
-        decoded = processor.decode(generation, skip_special_tokens=True)
-        print(decoded)
-        Results.append(decoded[decoded.find("{") : decoded.rfind("}") + 1])
+    decoded = processor.decode(generation, skip_special_tokens=True)
+    print(csv_to_json(csv))
+    print(decoded)
+    Result = decoded[decoded.find("{") : decoded.rfind("}") + 1]
 
     # Store the extracted values in a file
     opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
     os.makedirs(os.path.dirname(opfile), exist_ok=True)
-    json_data = {}
-    for result in Results:
-        try:
-            json_data.update(json.loads(result))
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
-            print(f"Result: {result}")
+
     with open(opfile, "w") as f:
-        json.dump(json_data, f, indent=4)
+        f.write(Result)

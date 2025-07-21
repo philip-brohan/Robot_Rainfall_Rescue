@@ -3,14 +3,19 @@
 import os
 import csv
 import json
+import random
 
 from PIL import Image
 
 
 # Get all the image/csv names
-def get_index_list(max_n=None):
+def get_index_list(max_n=None, shuffle=True, seed=None):
     image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images")
     result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
+    if seed is not None:
+        random.seed(seed)
+    if shuffle:
+        random.shuffle(result)
     if max_n is not None:
         result = result[:max_n]
     return result

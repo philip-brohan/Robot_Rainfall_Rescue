@@ -47,6 +47,13 @@ parser.add_argument(
     default=100,
 )
 parser.add_argument(
+    "--random_seed",
+    help="Seed for random selection of training cases",
+    type=int,
+    required=False,
+    default=None,
+)
+parser.add_argument(
     "--epochs",
     help="Number of epochs to train",
     type=int,
@@ -140,8 +147,8 @@ def format_data(sample):
 
 # Make a training dataset from the RR image/CSV pairs
 class RRTrainingDataset(Dataset):
-    def __init__(self, max_n=None):
-        self.labels = get_index_list(max_n=max_n)
+    def __init__(self, max_n=None, seed=None):
+        self.labels = get_index_list(max_n=max_n, seed=seed)
 
     def __len__(self):
         return len(self.labels)
@@ -151,11 +158,9 @@ class RRTrainingDataset(Dataset):
         return self.labels[idx], img, csv
 
 
-dataset = RRTrainingDataset(max_n=args.nmax)
+dataset = RRTrainingDataset(max_n=args.nmax, seed=args.random_seed)
 # Convert dataset to OAI messages
 dataset = [format_data(sample) for sample in dataset]
-
-print(dataset[77]["messages"])
 
 
 # Define model init arguments
