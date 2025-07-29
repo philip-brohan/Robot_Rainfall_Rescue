@@ -14,7 +14,7 @@ def makeCSV(self):
     for imnth in range(12):
         dict[months[imnth]] = self.rdata[months[imnth]]
     dict["Totals"] = self.rdata["Totals"]
-    if not os.path.isdir("%s/csv" % self.opdir):
-        os.makedirs("%s/csv" % self.opdir)
-    with open("%s/csv/%s.csv" % (self.opdir, self.docn), "w") as pf:
+    if not os.path.isdir("%s/csvs" % self.opdir):
+        os.makedirs("%s/csvs" % self.opdir)
+    with open("%s/csvs/%s.csv" % (self.opdir, self.docn), "w") as pf:
         pf.write(str(dict))

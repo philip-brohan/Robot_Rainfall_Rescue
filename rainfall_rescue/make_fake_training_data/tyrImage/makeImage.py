@@ -53,4 +53,4 @@ def makeImage(self):
     drawFakeMetadata(self, ax_full)
     if not os.path.isdir("%s/images" % self.opdir):
         os.makedirs("%s/images" % self.opdir)
-    fig.savefig("%s/images/%s.png" % (self.opdir, self.docn))
+    fig.savefig("%s/images/%s.jpg" % (self.opdir, self.docn))

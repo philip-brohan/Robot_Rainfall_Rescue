@@ -26,7 +26,7 @@ parser.add_argument(
     help="Model ID",
     type=str,
     required=False,
-    default="google/gemma-3-12b-it",
+    default="google/gemma-3-4b-it",
 )
 parser.add_argument(
     "--label",
@@ -36,6 +36,13 @@ parser.add_argument(
     default=None,
 )
 parser.add_argument(
+    "--fake",
+    help="Use fake data - not real",
+    action="store_true",
+    required=False,
+    default=False,
+)
+parser.add_argument(
     "--patch_size",
     help="Image patch size (pixels)",
     type=int,
@@ -43,8 +50,8 @@ parser.add_argument(
     default=600,
 )
 parser.add_argument(
-    "--no_quantize",
-    help="Don't quantize the model",
+    "--quantize",
+    help="Quantize the model",
     action="store_true",
     required=False,
     default=False,
@@ -52,7 +59,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.label is None:
-    args.label = random.choice(get_index_list())
+    args.label = random.choice(get_index_list(fake=args.fake))
     print(f"Label not specified. Using random label: {args.label}")
 
 # Load the image and CSV data
@@ -71,7 +78,7 @@ model_kwargs = dict(
 )
 
 # BitsAndBytesConfig int-4 config
-if not args.no_quantize:
+if args.quantize:
     print("Using quantization for the model")
     model_kwargs["quantization_config"] = BitsAndBytesConfig(
         load_in_4bit=True,

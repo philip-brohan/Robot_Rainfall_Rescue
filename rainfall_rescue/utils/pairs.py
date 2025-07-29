@@ -8,15 +8,24 @@ import random
 from PIL import Image
 
 
-# Get all the image/csv names
-def get_index_list(max_n=None, shuffle=True, seed=None):
-    image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images")
-    result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
+# Get the image/csv names
+def get_index_list(max_n=None, shuffle=True, seed=None, fake=False, training=None):
     if seed is not None:
         random.seed(seed)
+    if fake:
+        image_path = os.path.join(f"{os.getenv('PDIR')}/fake_training_data/images")
+        result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
+    else:
+        image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images")
+        result = [x[:-4] for x in os.listdir(image_path) if x.endswith(".jpg")]
+    if training is not None:
+        if training:
+            result = [x for x in result if x[-1] != "0"]
+        else:
+            result = [x for x in result if x[-1] == "0"]
     if shuffle:
         random.shuffle(result)
-    if max_n is not None:
+    if max_n is not None and len(result) > max_n:
         result = result[:max_n]
     return result
 
@@ -68,9 +77,48 @@ def load_pair(label):
     Returns:
         tuple: A tuple containing the image and the CSV file path.
     """
-    image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images", f"{label}.jpg")
+    if len(label) != 4:  # Real data
+        image_path = os.path.join(f"{os.getenv('PDIR')}/from_Ed/images", f"{label}.jpg")
+        csv_path = os.path.join(
+            f"{os.getenv('PDIR')}/from_Ed/csvs",
+            f"{label}.csv",
+        )
+
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image {image_path} does not exist.")
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"CSV {csv_path} does not exist.")
+
+        image = Image.open(image_path)
+        csv = load_station_csv(csv_path)
+    else:
+        # Fake data
+        image_path = os.path.join(
+            f"{os.getenv('PDIR')}/fake_training_data/images", f"{label}.jpg"
+        )
+        csv_path = os.path.join(
+            f"{os.getenv('PDIR')}/fake_training_data/csvs",
+            f"{label}.csv",
+        )
+
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image {image_path} does not exist.")
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"CSV {csv_path} does not exist.")
+
+        image = Image.open(image_path)
+        csv = load_fake_csv(csv_path)
+
+    return image, csv
+
+
+# Load a pair of image and csv data - from the fake training data
+def load_fake_pair(label):
+    image_path = os.path.join(
+        f"{os.getenv('PDIR')}/fake_training_data/images", f"{label}.jpg"
+    )
     csv_path = os.path.join(
-        f"{os.getenv('PDIR')}/from_Ed/csvs",
+        f"{os.getenv('PDIR')}/fake_training_data/csvs",
         f"{label}.csv",
     )
 
@@ -80,5 +128,15 @@ def load_pair(label):
         raise FileNotFoundError(f"CSV {csv_path} does not exist.")
 
     image = Image.open(image_path)
-    csv = load_station_csv(csv_path)
+    csv = load_fake_csv(csv_path)
     return image, csv
+
+
+# Load a csv file into a data structure (dictionary)
+def load_fake_csv(csv_path):
+    result = {}
+    with open(csv_path, mode="r") as file:
+        contents = file.read()
+        contents = contents.replace("'", '"')  # Json needs double quotes
+        result = json.loads(contents)
+    return result

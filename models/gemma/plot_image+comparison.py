@@ -41,10 +41,19 @@ parser.add_argument(
     required=False,
     default=None,
 )
+parser.add_argument(
+    "--fake",
+    help="Use fake data - not real",
+    action="store_true",
+    required=False,
+    default=False,
+)
 args = parser.parse_args()
 if args.label is None:
-    args.label = random.choice(get_index_list())
+    args.label = random.choice(get_index_list(fake=args.fake))
 
+if len(args.label) < 5:
+    args.fake = True
 
 # load the image/data pair
 img, csv = load_pair(args.label)

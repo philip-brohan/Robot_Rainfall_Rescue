@@ -13,7 +13,5 @@ if not os.path.isdir(opdir):
     os.makedirs(opdir)
 
 for i in range(1000):
-    ic = tyrImage(opdir, "training_%03d" % i)
-
-for i in range(100):
-    ic = tyrImage(opdir, "test_%03d" % i)
+    print(i)
+    ic = tyrImage(opdir, "%04d" % i)

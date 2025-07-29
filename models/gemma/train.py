@@ -30,11 +30,11 @@ parser.add_argument(
     help="Model ID",
     type=str,
     required=False,
-    default="google/gemma-3-12b-it",
+    default="google/gemma-3-4b-it",
 )
 parser.add_argument(
-    "--no_quantize",
-    help="Don't quantize the model",
+    "--quantize",
+    help="Quantize the model",
     action="store_true",
     required=False,
     default=False,
@@ -47,8 +47,15 @@ parser.add_argument(
     default=100,
 )
 parser.add_argument(
+    "--fake",
+    help="Use fake cases instead of real",
+    action="store_true",
+    required=False,
+    default=False,
+)
+parser.add_argument(
     "--random_seed",
-    help="Seed for random selection of training cases",
+    help="Control the set of 'random'; choices",
     type=int,
     required=False,
     default=None,
@@ -148,7 +155,9 @@ def format_data(sample):
 # Make a training dataset from the RR image/CSV pairs
 class RRTrainingDataset(Dataset):
     def __init__(self, max_n=None, seed=None):
-        self.labels = get_index_list(max_n=max_n, seed=seed)
+        self.labels = get_index_list(
+            max_n=max_n, seed=seed, fake=args.fake, training=True
+        )
 
     def __len__(self):
         return len(self.labels)
@@ -171,7 +180,7 @@ model_kwargs = dict(
 )
 
 # BitsAndBytesConfig int-4 config
-if not args.no_quantize:
+if args.quantize:
     model_kwargs["quantization_config"] = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_use_double_quant=True,
@@ -209,7 +218,7 @@ sargs = SFTConfig(
     optim="adamw_torch_fused",  # use fused adamw optimizer
     logging_steps=5,  # log every 5 steps
     save_strategy="epoch",  # save checkpoint every epoch
-    learning_rate=2e-4,  # learning rate, based on QLoRA paper
+    learning_rate=1e-4,  # 2e-4,  # learning rate, based on QLoRA paper
     bf16=True,  # use bfloat16 precision
     max_grad_norm=0.3,  # max gradient norm based on QLoRA paper
     warmup_ratio=0.03,  # warmup ratio based on QLoRA paper
