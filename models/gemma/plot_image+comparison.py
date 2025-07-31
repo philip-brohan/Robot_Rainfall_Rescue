@@ -5,6 +5,7 @@
 
 from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
 from rainfall_rescue.utils.validate import (
+    jsonfix,
     plot_image,
     plot_metadata,
     plot_monthly_table,
@@ -62,16 +63,12 @@ jcsv = json.loads(csv_to_json(csv))
 # Load the model extracted data
 opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id_1}/{args.label}.json"
 with open(opfile, "r") as f:
-    raw_j = f.read()
-    fixed_j = re.sub(r"(?<!\d)\.(\d+)", r"0.\1", raw_j)  # Fix numbers like .12 -> 0.12
-    fixed_j = re.sub(r"(\d+):", r'"\1":', fixed_j)  # Fix keys like 2023: -> "2023":
-    extracted_1 = json.loads(fixed_j)
+    raw_j = jsonfix(f.read())
+    extracted_1 = json.loads(raw_j)
 opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id_2}/{args.label}.json"
 with open(opfile, "r") as f:
-    raw_j = f.read()
-    fixed_j = re.sub(r"(?<!\d)\.(\d+)", r"0.\1", raw_j)
-    fixed_j = re.sub(r"(\d+):", r'"\1":', fixed_j)
-    extracted_2 = json.loads(fixed_j)
+    raw_j = jsonfix(f.read())
+    extracted_2 = json.loads(raw_j)
 
 # Create the figure
 fig = Figure(
@@ -112,6 +109,4 @@ plot_totals(ax_totals2, extracted_2, jcsv)
 
 
 # Render
-fig.savefig(
-    "compare_%s.webp" % (args.label),
-)
+fig.savefig("compare.webp")

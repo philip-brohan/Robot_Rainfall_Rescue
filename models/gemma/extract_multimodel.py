@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Run one of the Gemma models and extract data from a RR image
+# Run one of the Huggingface models and extract data from a RR image
 # Output the extracted data as a JSON structure
 
 import os
@@ -12,7 +12,7 @@ HFlogin()
 
 from transformers import (
     AutoProcessor,
-    Gemma3ForConditionalGeneration,
+    AutoModelForImageTextToText,
     BitsAndBytesConfig,
 )
 import torch
@@ -29,25 +29,18 @@ parser.add_argument(
     default="google/gemma-3-4b-it",
 )
 parser.add_argument(
-    "--image_count",
-    help="No. of images to process",
-    type=int,
+    "--label",
+    help="Image identifier",
+    type=str,
     required=False,
-    default=10,
+    default=None,
 )
 parser.add_argument(
     "--fake",
-    help="Use fake cases instead of real",
+    help="Use fake data - not real",
     action="store_true",
     required=False,
     default=False,
-)
-parser.add_argument(
-    "--purpose",
-    help="Training or test or neither",
-    type=str,
-    required=False,
-    default="Test",
 )
 parser.add_argument(
     "--patch_size",
@@ -63,14 +56,20 @@ parser.add_argument(
     required=False,
     default=False,
 )
-parser.add_argument(
-    "--random_seed",
-    help="Control the set of 'random'; choices",
-    type=int,
-    required=False,
-    default=None,
-)
 args = parser.parse_args()
+
+if args.label is None:
+    args.label = random.choice(get_index_list(fake=args.fake))
+    print(f"Label not specified. Using random label: {args.label}")
+
+# Load the image and CSV data
+img, csv = load_pair(args.label)
+# Cut the image into blocks
+if args.patch_size is not None:
+    blocks = cut_image(img, args.patch_size, overlap=0.1)
+else:
+    blocks = [img]  # Use the whole image if no patch size is specified
+print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
 
 model_kwargs = dict(
     attn_implementation="eager",  # Use "flash_attention_2" when running on Ampere or newer GPU
@@ -94,17 +93,16 @@ if args.quantize:
 if os.path.exists(f"{os.getenv('PDIR')}/{args.model_id}"):
     model_dir = f"{os.getenv('PDIR')}/{args.model_id}"
     print(f"Loading model from local directory: {model_dir}")
-    model = Gemma3ForConditionalGeneration.from_pretrained(
+    model = AutoModelForImageTextToText.from_pretrained(
         model_dir, **model_kwargs
     ).eval()
     processor = AutoProcessor.from_pretrained(model_dir)
 
 else:
-    model = Gemma3ForConditionalGeneration.from_pretrained(
+    model = AutoModelForImageTextToText.from_pretrained(
         args.model_id, **model_kwargs
     ).eval()
     processor = AutoProcessor.from_pretrained(args.model_id)
-
 
 # System prompt
 s_prompt = (
@@ -136,76 +134,47 @@ u_prompt = (
     + '"Totals": [<total1>,<total2>,...]}'
 )
 
+messages = [
+    {
+        "role": "system",
+        "content": [{"type": "text", "text": s_prompt}],
+    },
+    {
+        "role": "user",
+        "content": [{"type": "image", "image": block} for block in blocks]
+        + [
+            {
+                "type": "text",
+                "text": u_prompt,
+            }
+        ],
+    },
+]
 
-if args.random_seed is not None:
-    print(f"Setting random seed to {args.random_seed}")
-    random.seed(args.random_seed)
+inputs = processor.apply_chat_template(
+    messages,
+    add_generation_prompt=True,
+    tokenize=True,
+    return_dict=True,
+    return_tensors="pt",
+).to(model.device, dtype=torch.bfloat16)
 
-training = None
-if args.purpose.lower() == "training":
-    training = True
-elif args.purpose.lower() == "test":
-    training = False
-labels = get_index_list(
-    max_n=args.image_count,
-    shuffle=True,
-    seed=args.random_seed,
-    fake=args.fake,
-    training=training,
-)
-for label in labels:
-    print(f"Using label: {label}")
+input_len = inputs["input_ids"].shape[-1]
 
-    # Load the image and CSV data
-    img, csv = load_pair(label)
-    # Cut the image into blocks
-    if args.patch_size is not None:
-        blocks = cut_image(img, args.patch_size, overlap=0.1)
-    else:
-        blocks = [img]  # Use the whole image if no patch size is specified
-    print(f"Cut image into {len(blocks)} blocks of size {blocks[0].size}")
+with torch.inference_mode():
+    generation = model.generate(
+        **inputs, max_new_tokens=5000, do_sample=False, top_k=None, top_p=None
+    )
+    generation = generation[0][input_len:]
 
-    messages = [
-        {
-            "role": "system",
-            "content": [{"type": "text", "text": s_prompt}],
-        },
-        {
-            "role": "user",
-            "content": [{"type": "image", "image": block} for block in blocks]
-            + [
-                {
-                    "type": "text",
-                    "text": u_prompt,
-                }
-            ],
-        },
-    ]
+decoded = processor.decode(generation, skip_special_tokens=True)
+print(csv_to_json(csv))
+print(decoded)
+Result = decoded[decoded.find("{") : decoded.rfind("}") + 1]
 
-    inputs = processor.apply_chat_template(
-        messages,
-        add_generation_prompt=True,
-        tokenize=True,
-        return_dict=True,
-        return_tensors="pt",
-    ).to(model.device, dtype=torch.bfloat16)
+# Store the extracted values in a file
+opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{args.label}.json"
+os.makedirs(os.path.dirname(opfile), exist_ok=True)
 
-    input_len = inputs["input_ids"].shape[-1]
-
-    with torch.inference_mode():
-        generation = model.generate(
-            **inputs, max_new_tokens=5000, do_sample=False, top_k=None, top_p=None
-        )
-        generation = generation[0][input_len:]
-
-    decoded = processor.decode(generation, skip_special_tokens=True)
-    print(csv_to_json(csv))
-    print(decoded)
-    Result = decoded[decoded.find("{") : decoded.rfind("}") + 1]
-
-    # Store the extracted values in a file
-    opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{label}.json"
-    os.makedirs(os.path.dirname(opfile), exist_ok=True)
-
-    with open(opfile, "w") as f:
-        f.write(Result)
+with open(opfile, "w") as f:
+    f.write(Result)

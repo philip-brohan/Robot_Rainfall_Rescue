@@ -10,6 +10,7 @@ from rainfall_rescue.utils.validate import (
     validate_case,
     merge_validated_cases,
 )
+from rainfall_rescue.utils.pairs import get_index_list
 import os
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -31,16 +32,53 @@ parser.add_argument(
     required=False,
     default="google/gemma-3-12b-it",
 )
+parser.add_argument(
+    "--purpose",
+    help="Training or test or neither",
+    type=str,
+    required=False,
+    default="Test",
+)
+parser.add_argument(
+    "--fake",
+    help="Use fake cases instead of real",
+    action="store_true",
+    required=False,
+    default=False,
+)
 args = parser.parse_args()
+
+
+# Get the list of labels where there are extractions from the given model_id
+def get_cases(model_id, purpose, fake=None):
+    training = None
+    if purpose.lower()[0:5] == "train":
+        training = True
+    elif purpose.lower() == "test":
+        training = False
+    labels = get_index_list(
+        fake=fake,
+        training=training,
+    )
+
+    opdir = f"{os.getenv('PDIR')}/extracted/{model_id}"
+    if not os.path.exists(opdir):
+        raise ValueError(f"Output directory {opdir} does not exist")
+    extractions = os.listdir(opdir)
+    if not extractions:
+        raise ValueError(f"No extractions found for model {model_id}")
+    extractions = [c[:-5] for c in extractions if c.endswith(".json")]
+
+    # Filter labels to those that have extractions
+    cases = [l for l in labels if l in extractions]
+    return cases
 
 
 # Extract the validation ststistics
 def get_merged(model_id):
-    opdir = f"{os.getenv('PDIR')}/extracted/{model_id}"
-    cases = os.listdir(opdir)
+    cases = get_cases(model_id, args.purpose, args.fake)
     if not cases:
         raise ValueError(f"No cases found for model {model_id}")
-    cases = [c[:-5] for c in cases if c.endswith(".json")]
 
     # Validate all cases
     merged = None
@@ -85,7 +123,4 @@ ax_totals_2 = fig.add_axes([0.05 + 0.45 + 0.03, 0.05, 0.45, 0.07])
 plot_totals_fraction(ax_totals_2, merged_2, cmp=merged_1)
 
 # Render
-fig.savefig(
-    "c_%s_%s.webp"
-    % (args.model_id_1.replace("/", "_"), args.model_id_2.replace("/", "_")),
-)
+fig.savefig("stats_comparison.webp")

@@ -35,5 +35,6 @@ dependencies:
       - einops==0.7.0
       - mediapy==1.1.6
       - loguru>=0.7.0
+      - autoawq>=0.1.8
 
 

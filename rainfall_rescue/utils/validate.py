@@ -375,6 +375,23 @@ def plot_totals_fraction(ax, merged, cmp=None):
             )
 
 
+# Untraind models don't make good JSON - fix the egregious problems so it parses
+def quote_list_items(match):
+    # Get the content inside the brackets
+    items = [v.strip() for v in match.group(1).split(",")]
+    quoted = ['"%s"' % v for v in items]
+    return "[" + ", ".join(quoted) + "]"
+
+
+def jsonfix(input):
+    """Fix JSON that has numbers like .12 instead of 0.12"""
+    fixed = re.sub(r"(?<!\d)\.(\d+)", r"0.\1", input)  # Fix numbers like .12 -> 0.12
+    fixed = re.sub(r"(\d+):", r'"\1":', fixed)  # Fix keys like 2023: -> "2023":
+    fixed = re.sub(r"\[([^\[\]]+)\]", quote_list_items, fixed)  # Quote list items
+    fixed = fixed.replace('""', '"')
+    return fixed
+
+
 # find where the model is accurate for each value in one case
 def validate_case(model_id, label):
 
@@ -385,15 +402,11 @@ def validate_case(model_id, label):
     # Load the model extracted data
     opfile = f"{os.getenv('PDIR')}/extracted/{model_id}/{label}.json"
     with open(opfile, "r") as f:
-        raw_j = f.read()
-        fixed_j = re.sub(
-            r"(?<!\d)\.(\d+)", r"0.\1", raw_j
-        )  # Fix numbers like .12 -> 0.12
-        fixed_j = re.sub(r"(\d+):", r'"\1":', fixed_j)  # Fix keys like 2023: -> "2023":
+        raw_j = jsonfix(f.read())
         try:
-            extracted = json.loads(fixed_j)
+            extracted = json.loads(raw_j)
         except json.JSONDecodeError as e:
-            print(f"Error decoding JSON for case {label}: {e}")
+            print(f"Error decoding JSON for case {model_id} {label}: {e}")
             return None
 
     # Check if the extracted data matches the CSV data
