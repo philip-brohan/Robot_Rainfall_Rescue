@@ -5,7 +5,7 @@
 
 from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
 from rainfall_rescue.utils.validate import (
-    jsonfix,
+    load_extracted,
     plot_image,
     plot_metadata,
     plot_monthly_table,
@@ -61,14 +61,8 @@ img, csv = load_pair(args.label)
 jcsv = json.loads(csv_to_json(csv))
 
 # Load the model extracted data
-opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id_1}/{args.label}.json"
-with open(opfile, "r") as f:
-    raw_j = jsonfix(f.read())
-    extracted_1 = json.loads(raw_j)
-opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id_2}/{args.label}.json"
-with open(opfile, "r") as f:
-    raw_j = jsonfix(f.read())
-    extracted_2 = json.loads(raw_j)
+extracted_1 = load_extracted(args.model_id_1, args.label)
+extracted_2 = load_extracted(args.model_id_2, args.label)
 
 # Create the figure
 fig = Figure(

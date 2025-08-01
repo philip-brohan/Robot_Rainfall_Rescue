@@ -168,6 +168,10 @@ for label in labels:
     print(csv_to_json(csv))
     print(decoded)
     Result = decoded[decoded.find("{") : decoded.rfind("}") + 1]
+    if len(Result) == 0:
+        Result = (
+            decoded  # JSON output broken, we're probably screwed, but grab what we can
+        )
 
     # Store the extracted values in a file
     opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{label}.json"

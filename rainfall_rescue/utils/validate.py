@@ -40,17 +40,10 @@ def plot_two_colored_text(
     ax.add_patch(patch)
 
 
-# Get an integer set of years
-def get_years(jcsv):
-    years = [int(x) for x in jcsv["Years"]]
-    years = sorted(years)
-    return years
-
-
 # Present extracted data as a %.2f string as far as possible
-def format_value(data, month, year):
+def format_value(data, month, year_idx):
     try:
-        value = data[month][year - min(get_years(data))]
+        value = data[month][year_idx]
     except (IndexError, KeyError):
         return "N/A"
     if value is None or value == "null":
@@ -105,6 +98,35 @@ def plot_metadata(ax, extracted, jcsv):
         ymp -= 0.3
 
 
+def plot_metadata_agreement(ax, extracted1, extracted2, jcsv):
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    ymp = 0.8
+    for metad in ("Number", "Name"):
+        exv1 = extracted1[metad]
+        exv2 = extracted2[metad]
+        rrv = jcsv[metad]
+        if exv1 == exv2:  # Models agree
+            if exv1 == rrv:  # on the right answer
+                colour = (0, 0, 1)  # Blue
+            else:  # on the wrong answer
+                colour = (1, 0, 0)  # Red
+        else:  # Models disagree
+            colour = (0.5, 0.5, 0.5)  # Grey
+        ax.text(
+            0.05,
+            ymp,
+            "%s: %s" % (metad, exv1),
+            fontsize=14,
+            color=colour,
+        )
+        ymp -= 0.3
+
+
 # Plot fractiobnal success at metadata into a given axes
 def plot_metadata_fraction(ax, merged, cmp=None):
 
@@ -142,10 +164,14 @@ def plot_metadata_fraction(ax, merged, cmp=None):
 
 # Plot the digitised numbers into a given axes
 def plot_monthly_table(ax, extracted, jcsv, yticks=True):
-    years = get_years(jcsv)
-    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
-    ax.set_xticks(range(years[0], years[-1] + 1))
-    ax.set_xticklabels(years)
+    ax.set_xlim(0.5, 10.5)
+    ax.set_xticks(range(1, 11))
+    ax.xaxis.set_ticks_position("top")
+    labels = ax.set_xticklabels(extracted["Years"])
+    # Note - this has to be the last change made to the xtics, or the colours will be reset
+    for year_idx, label in enumerate(labels):
+        if extracted["Years"][year_idx] != jcsv["Years"][year_idx]:
+            label.set_color("red")
     ax.set_ylim(0.5, 13)
     if yticks:
         ax.set_yticks(range(1, 13))
@@ -167,7 +193,6 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
         )
     else:
         ax.set_yticks([])
-    ax.xaxis.set_ticks_position("top")
     ax.xaxis.set_label_position("top")
     ax.invert_yaxis()
     ax.set_aspect("auto")
@@ -187,15 +212,15 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
         "December": 12,
     }
 
-    for year in years:
+    for year_idx in range(10):
         for month in monthNumbers.keys():
             try:
-                exv = format_value(extracted, month, year)
-                rrv = format_value(jcsv, month, year)
+                exv = format_value(extracted, month, year_idx)
+                rrv = format_value(jcsv, month, year_idx)
                 try:
                     if exv == rrv:
                         ax.text(
-                            year,
+                            year_idx + 1,
                             monthNumbers[month],
                             exv,
                             ha="center",
@@ -205,7 +230,7 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
                         )
                     else:
                         ax.text(
-                            year,
+                            year_idx + 1,
                             monthNumbers[month],
                             exv,
                             ha="center",
@@ -214,7 +239,7 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
                             color="red",
                         )
                         ax.text(
-                            year,
+                            year_idx + 1,
                             monthNumbers[month] + 0.5,
                             rrv,
                             ha="center",
@@ -229,11 +254,20 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
                 continue
 
 
-def plot_monthly_table_fraction(ax, merged, cmp=None, yticks=True):
-    years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
-    ax.set_xticks(range(years[0], years[-1] + 1))
-    ax.set_xticklabels(years)
+def plot_monthly_table_agreement(ax, extracted1, extracted2, jcsv, yticks=True):
+    ax.set_xlim(0.5, 10.5)
+    ax.set_xticks(range(1, 11))
+    ax.xaxis.set_ticks_position("top")
+    labels = ax.set_xticklabels(extracted1["Years"])
+    # Note - this has to be the last change made to the xtics, or the colours will be reset
+    for year_idx, label in enumerate(labels):
+        if extracted1["Years"][year_idx] == extracted2["Years"][year_idx]:
+            if extracted1["Years"][year_idx] != jcsv["Years"][year_idx]:
+                label.set_color("red")
+            else:
+                label.set_color("blue")
+        else:
+            label.set_color("grey")
     ax.set_ylim(0.5, 13)
     if yticks:
         ax.set_yticks(range(1, 13))
@@ -255,8 +289,84 @@ def plot_monthly_table_fraction(ax, merged, cmp=None, yticks=True):
         )
     else:
         ax.set_yticks([])
+    ax.xaxis.set_label_position("top")
+    ax.invert_yaxis()
+    ax.set_aspect("auto")
+
+    monthNumbers = {
+        "January": 1,
+        "February": 2,
+        "March": 3,
+        "April": 4,
+        "May": 5,
+        "June": 6,
+        "July": 7,
+        "August": 8,
+        "September": 9,
+        "October": 10,
+        "November": 11,
+        "December": 12,
+    }
+
+    for year_idx in range(10):
+        for month in monthNumbers.keys():
+            try:
+                exv1 = format_value(extracted1, month, year_idx)
+                exv2 = format_value(extracted2, month, year_idx)
+                rrv = format_value(jcsv, month, year_idx)
+                if exv1 == exv2:  # Models agree
+                    if exv1 == rrv:  # on the right answer
+                        colour = (0, 0, 1)  # Blue
+                    else:  # on the wrong answer
+                        colour = (1, 0, 0)  # Red
+                else:  # Models disagree
+                    colour = (0.5, 0.5, 0.5)  # Grey
+                ax.text(
+                    year_idx + 1,
+                    monthNumbers[month],
+                    exv1,
+                    ha="center",
+                    va="center",
+                    fontsize=14,
+                    color=colour,
+                )
+            except KeyError as e:
+                continue
+
+
+def plot_monthly_table_fraction(ax, merged, cmp=None, yticks=True):
+    years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
     ax.xaxis.set_ticks_position("top")
     ax.xaxis.set_label_position("top")
+    ax.set_xticks(range(years[0], years[-1] + 1))
+    xtfraction = [
+        sum(merged["Years"][year_idx]) / len(merged["Years"][year_idx])
+        for year_idx in range(10)
+    ]
+    xtl = [f"{int(fraction * 100)}" for fraction in xtfraction]
+    ax.set_xticklabels(xtl)
+    ax.set_ylim(0.5, 13)
+    if yticks:
+        ax.set_yticks(range(1, 13))
+        ax.set_yticklabels(
+            (
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            )
+        )
+    else:
+        ax.set_yticks([])
     ax.invert_yaxis()
     ax.set_aspect("auto")
 
@@ -303,18 +413,17 @@ def plot_monthly_table_fraction(ax, merged, cmp=None, yticks=True):
 
 # plot the extracted totals into a given axes
 def plot_totals(ax, extracted, jcsv):
-    years = get_years(jcsv)
-    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
+    ax.set_xlim(0.5, 10.5)
     ax.set_ylim(0, 1)
     ax.set_xticks([])
     ax.set_yticks([])
 
-    for year in years:
-        exv = format_value(extracted, "Totals", year)
-        rrv = format_value(jcsv, "Totals", year)
+    for year_idx in range(10):
+        exv = format_value(extracted, "Totals", year_idx)
+        rrv = format_value(jcsv, "Totals", year_idx)
         if exv == rrv:
             ax.text(
-                year,
+                year_idx + 1,
                 0.7,
                 exv,
                 ha="center",
@@ -324,7 +433,7 @@ def plot_totals(ax, extracted, jcsv):
             )
         else:
             ax.text(
-                year,
+                year_idx + 1,
                 0.7,
                 exv,
                 ha="center",
@@ -333,7 +442,7 @@ def plot_totals(ax, extracted, jcsv):
                 color="red",
             )
             ax.text(
-                year,
+                year_idx + 1,
                 0.3,
                 rrv,
                 ha="center",
@@ -341,6 +450,36 @@ def plot_totals(ax, extracted, jcsv):
                 fontsize=12,
                 color="blue",
             )
+
+
+# Mark where multi models agreed - for totals
+def plot_totals_agreement(ax, extracted1, extracted2, jcsv):
+    ax.set_xlim(0.5, 10.5)
+    ax.set_ylim(0, 1)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    for year_idx in range(0, 10):
+        exv1 = format_value(extracted1, "Totals", year_idx)
+        exv2 = format_value(extracted2, "Totals", year_idx)
+        rrv = format_value(jcsv, "Totals", year_idx)
+
+        if exv1 == exv2:  # Models agree
+            if exv1 == rrv:  # on the right answer
+                colour = (0, 0, 1)  # Blue
+            else:  # on the wrong answer
+                colour = (1, 0, 0)  # Red
+        else:  # Models disagree
+            colour = (0.5, 0.5, 0.5)  # Grey
+        ax.text(
+            year_idx + 1,
+            0.5,
+            exv1,
+            ha="center",
+            va="center",
+            fontsize=14,
+            color=colour,
+        )
 
 
 def plot_totals_fraction(ax, merged, cmp=None):
@@ -375,7 +514,29 @@ def plot_totals_fraction(ax, merged, cmp=None):
             )
 
 
-# Untraind models don't make good JSON - fix the egregious problems so it parses
+def make_null_json():
+    """Create a null JSON object for cases where no data is available."""
+    all_na = {"Name": "N/A", "Number": "N/A", "Years": ["N/A"] * 10}
+    for month in (
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ):
+        all_na[month] = ["N/A"] * 10
+    all_na["Totals"] = ["N/A"] * 10
+    return all_na
+
+
+# Models don't always make good JSON - fix the egregious problems so it parses
 def quote_list_items(match):
     # Get the content inside the brackets
     items = [v.strip() for v in match.group(1).split(",")]
@@ -389,7 +550,40 @@ def jsonfix(input):
     fixed = re.sub(r"(\d+):", r'"\1":', fixed)  # Fix keys like 2023: -> "2023":
     fixed = re.sub(r"\[([^\[\]]+)\]", quote_list_items, fixed)  # Quote list items
     fixed = fixed.replace('""', '"')
+    fixed = "".join(
+        c for c in fixed if c.isprintable()
+    )  # Get rid of line breaks and other non-printable characters
+    # Deal with bad terminations
+    if not fixed.endswith("]}"):
+        fixed = fixed[
+            : fixed.rfind("]}") + 2
+        ]  # Might cut off too much, but if so we're screwed anyway.
     return fixed
+
+
+# Load the extracted data from a model, for a label
+def load_extracted(model_id, label):
+    """Load the extracted data from a model for a given label."""
+    null_j = make_null_json()
+    opfile = f"{os.getenv('PDIR')}/extracted/{model_id}/{label}.json"
+    if not os.path.exists(opfile):
+        print(f"No extraction for {model_id} {label}")
+        return null_j
+    with open(opfile, "r") as f:
+        raw_j = f.read()
+        fixed_j = jsonfix(raw_j)
+        try:
+            extracted = json.loads(fixed_j)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON for {model_id} {label}: {e}")
+            return null_j
+    for key in null_j:
+        if key not in extracted:
+            extracted[key] = null_j[key]
+        elif isinstance(extracted[key], list) and len(extracted[key]) < 10:
+            # Ensure lists have 10 items
+            extracted[key] += ["N/A"] * (10 - len(extracted[key]))
+    return extracted
 
 
 # find where the model is accurate for each value in one case
@@ -400,14 +594,7 @@ def validate_case(model_id, label):
     jcsv = json.loads(csv_to_json(csv))
 
     # Load the model extracted data
-    opfile = f"{os.getenv('PDIR')}/extracted/{model_id}/{label}.json"
-    with open(opfile, "r") as f:
-        raw_j = jsonfix(f.read())
-        try:
-            extracted = json.loads(raw_j)
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON for case {model_id} {label}: {e}")
-            return None
+    extracted = load_extracted(model_id, label)
 
     # Check if the extracted data matches the CSV data
     correct = {}

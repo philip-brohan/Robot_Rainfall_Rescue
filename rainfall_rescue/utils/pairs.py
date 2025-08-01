@@ -62,8 +62,9 @@ def csv_to_json(csv_data):
     Returns:
         str: JSON string representation of the CSV data.
     """
-
-    return json.dumps(csv_data, separators=(",", ":"))
+    csv_data["Number"] = str(csv_data["Number"])  # Easier if this is a string
+    j = json.dumps(csv_data, separators=(",", ":"))
+    return j
 
 
 # Load a pair of image and csv data

@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-# Plot a 10-year monthly rainfall image and the data Gemma got from it
+# Plot a 10-year monthly rainfall image and test to see
+# how well two models agree on the digitised values.
 
 from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
 from rainfall_rescue.utils.validate import (
     load_extracted,
     plot_image,
-    plot_metadata,
-    plot_monthly_table,
-    plot_totals,
+    plot_metadata_agreement,
+    plot_monthly_table_agreement,
+    plot_totals_agreement,
 )
 import random
 import os
-import re
 import json
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -21,11 +21,18 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--model_id",
+    "--model_id_1",
     help="Model ID",
     type=str,
     required=False,
     default="google/gemma-3-4b-it",
+)
+parser.add_argument(
+    "--model_id_2",
+    help="Model ID",
+    type=str,
+    required=False,
+    default="google/gemma-3-12b-it",
 )
 parser.add_argument(
     "--label",
@@ -48,14 +55,13 @@ if args.label is None:
 if len(args.label) < 5:
     args.fake = True
 
-
 # load the image/data pair
 img, csv = load_pair(args.label)
 jcsv = json.loads(csv_to_json(csv))
 
-
 # Load the model extracted data
-extracted = load_extracted(args.model_id, args.label)
+extracted_1 = load_extracted(args.model_id_1, args.label)
+extracted_2 = load_extracted(args.model_id_2, args.label)
 
 # Create the figure
 fig = Figure(
@@ -74,18 +80,16 @@ canvas = FigureCanvas(fig)
 ax_original = fig.add_axes([0.01, 0.02, 0.47, 0.96])
 plot_image(ax_original, img)
 
-# Metadata top right
-ax_metadata = fig.add_axes([0.52, 0.8, 0.47, 0.15])
-plot_metadata(ax_metadata, extracted, jcsv)
+# First model in the middle
+ax_metadata1 = fig.add_axes([0.52, 0.8, 0.47, 0.15])
+plot_metadata_agreement(ax_metadata1, extracted_1, extracted_2, jcsv)
 
+ax_digitised1 = fig.add_axes([0.52, 0.13, 0.47, 0.63])
+plot_monthly_table_agreement(ax_digitised1, extracted_1, extracted_2, jcsv)
 
-# Digitised numbers on the right
-ax_digitised = fig.add_axes([0.52, 0.13, 0.47, 0.63])
-plot_monthly_table(ax_digitised, extracted, jcsv)
+ax_totals1 = fig.add_axes([0.52, 0.05, 0.47, 0.07])
+plot_totals_agreement(ax_totals1, extracted_1, extracted_2, jcsv)
 
-# Totals along the bottom
-ax_totals = fig.add_axes([0.52, 0.05, 0.47, 0.07])
-plot_totals(ax_totals, extracted, jcsv)
 
 # Render
-fig.savefig("extracted.webp")
+fig.savefig("agree.webp")
