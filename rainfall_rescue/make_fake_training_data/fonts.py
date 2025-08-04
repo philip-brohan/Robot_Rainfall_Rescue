@@ -38,7 +38,7 @@ fontNames = [
     "Noto Sans Mono",
     "Noto Serif",
     "Open Sans",
-    "OpenSymbol",
+    # "OpenSymbol",
     "P052",
     "Source Code Pro",
     "Stone Sans ITC TT",
