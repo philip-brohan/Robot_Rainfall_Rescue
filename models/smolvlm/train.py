@@ -190,6 +190,11 @@ model = AutoModelForVision2Seq.from_pretrained(
     args.model_id, torch_dtype=torch.bfloat16
 ).to(device)
 
+image_token_id = processor.tokenizer.additional_special_tokens_ids[
+    processor.tokenizer.additional_special_tokens.index("<image>")
+]
+
+
 peft_config = LoraConfig(
     lora_alpha=16,
     lora_dropout=0.05,
@@ -276,30 +281,10 @@ def collate_fn(examples):
     # The labels are the input_ids, and we mask the padding tokens and image tokens in the loss computation
     labels = batch["input_ids"].clone()
 
-    assistant_tokens = processor.tokenizer("<|assistant|>", return_tensors="pt")[
-        "input_ids"
-    ][0]
-    eos_token = processor.tokenizer("<|end_of_text|>", return_tensors="pt")[
-        "input_ids"
-    ][0]
-
-    for i in range(batch["input_ids"].shape[0]):
-        apply_loss = False
-        for j in range(batch["input_ids"].shape[1]):
-            if not apply_loss:
-                labels[i][j] = -100
-            if (j >= len(assistant_tokens) + 1) and torch.all(
-                batch["input_ids"][i][j + 1 - len(assistant_tokens) : j + 1]
-                == assistant_tokens
-            ):
-                apply_loss = True
-            try:
-                if torch.equal(batch["input_ids"][i][j], eos_token):
-                    apply_loss = False
-            except Exception as e:
-                print(eos_token)
-                print(batch["input_ids"][i][j])
-                raise (e)
+    labels[labels == processor.tokenizer.pad_token_id] = (
+        -100
+    )  # Mask padding tokens in labels
+    labels[labels == image_token_id] = -100  # Mask image token IDs in labels
 
     batch["labels"] = labels
     return batch
