@@ -10,7 +10,7 @@ dependencies:
   - python=3.10
   - matplotlib=3.10
 # Huggingface transformers library
-  - huggingface_hub=0.33
+  - huggingface_hub>=0.33
   - transformers>=4.53.1
 
 # Torch backend for transformers
@@ -35,6 +35,6 @@ dependencies:
       - einops==0.7.0
       - mediapy==1.1.6
       - loguru>=0.7.0
-      - autoawq>=0.1.8
+      - git+https://github.com/huggingface/diffusers
 
 

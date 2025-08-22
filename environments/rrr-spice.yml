@@ -8,8 +8,9 @@ dependencies:
   - black  # Code formatter
   - sphinx  # Documentation
 # Huggingface transformers library
-  - huggingface_hub=0.33
+  - huggingface_hub>=0.33
   - transformers>=4.51.3
+#  - diffusers>=0.35.0
   
 # Download images from Google Drive
   - rclone=1.69
@@ -30,9 +31,9 @@ dependencies:
       - accelerate==1.4.0
       - compressed-tensors
       - evaluate==0.4.3
-      - bitsandbytes==0.45.3
+      - bitsandbytes>=0.45.3
       - trl==0.15.2
-      - peft==0.14.0
+      - peft>=0.15.0
       - pillow==11.1.0
       - protobuf
       - sentencepiece
@@ -41,6 +42,7 @@ dependencies:
       - tensorboardX
       - tensorboard
       - opencensus-ext-logging
+      - git+https://github.com/huggingface/diffusers
      
 
 variables:
