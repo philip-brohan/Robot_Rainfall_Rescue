@@ -8,6 +8,7 @@ from matplotlib.text import TextPath
 from matplotlib.patches import PathPatch
 from matplotlib.transforms import Affine2D
 import numpy as np
+from collections import Counter
 
 
 def plot_two_colored_text(
@@ -46,12 +47,18 @@ def format_value(data, month, year_idx):
         value = data[month][year_idx]
     except (IndexError, KeyError):
         return "N/A"
+
+    return format_as_2f(value)
+
+
+def format_as_2f(value):
+    """Format a value as a string with two decimal places."""
     if value is None or value == "null":
         return "null"
     try:
         return "%.2f" % float(value)
     except ValueError:
-        return str(value)
+        return str(value)  # Return as is if it cannot be converted to float
 
 
 # Plot the image into a given axes
@@ -98,7 +105,30 @@ def plot_metadata(ax, extracted, jcsv):
         ymp -= 0.3
 
 
-def plot_metadata_agreement(ax, extracted1, extracted2, jcsv):
+def models_agree(extracted, value, idx=None, agreement_count=2):
+    """Check if the models agree on a value."""
+    values = []
+    for model_id in extracted.keys():
+        if idx is not None:
+            if value == "Years":
+                val = extracted[model_id][value][idx]
+            else:
+                val = format_as_2f(extracted[model_id][value][idx])
+        else:
+            val = extracted[model_id][value]
+        values.append(val)
+    counts = Counter(values)
+    top_two = counts.most_common(2)
+    if len(top_two) < 2:
+        return (True, top_two[0][0])  # Only one unique value
+    if top_two[0][1] == top_two[1][1]:  # No one most common value
+        return (False, top_two[0][0])
+    if top_two[0][1] >= agreement_count:  # Most common value is popular enough
+        return (True, top_two[0][0])
+    return (False, top_two[0][0])
+
+
+def plot_metadata_agreement(ax, extracted, jcsv, agreement_count=2):
 
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -107,11 +137,10 @@ def plot_metadata_agreement(ax, extracted1, extracted2, jcsv):
 
     ymp = 0.8
     for metad in ("Number", "Name"):
-        exv1 = extracted1[metad]
-        exv2 = extracted2[metad]
+        match, exv = models_agree(extracted, metad, agreement_count=agreement_count)
         rrv = jcsv[metad]
-        if exv1 == exv2:  # Models agree
-            if exv1 == rrv:  # on the right answer
+        if match:  # Models agree
+            if exv == rrv:  # on the right answer
                 colour = (0, 0, 1)  # Blue
             else:  # on the wrong answer
                 colour = (1, 0, 0)  # Red
@@ -120,14 +149,14 @@ def plot_metadata_agreement(ax, extracted1, extracted2, jcsv):
         ax.text(
             0.05,
             ymp,
-            "%s: %s" % (metad, exv1),
+            "%s: %s" % (metad, exv),
             fontsize=14,
             color=colour,
         )
         ymp -= 0.3
 
 
-# Plot fractiobnal success at metadata into a given axes
+# Plot fractional success at metadata into a given axes
 def plot_metadata_fraction(ax, merged, cmp=None):
 
     ax.set_xlim(0, 1)
@@ -254,19 +283,27 @@ def plot_monthly_table(ax, extracted, jcsv, yticks=True):
                 continue
 
 
-def plot_monthly_table_agreement(ax, extracted1, extracted2, jcsv, yticks=True):
+def plot_monthly_table_agreement(ax, extracted, jcsv, agreement_count=2, yticks=True):
     ax.set_xlim(0.5, 10.5)
     ax.set_xticks(range(1, 11))
     ax.xaxis.set_ticks_position("top")
-    labels = ax.set_xticklabels(extracted1["Years"])
-    # Note - this has to be the last change made to the xtics, or the colours will be reset
+    ax.xaxis.set_label_position("top")
+    xtl = ["N/A"] * 10
+    for year_idx in range(10):
+        match, xtl[year_idx] = models_agree(
+            extracted, "Years", idx=year_idx, agreement_count=agreement_count
+        )
+    labels = ax.set_xticklabels(xtl)
     for year_idx, label in enumerate(labels):
-        if extracted1["Years"][year_idx] == extracted2["Years"][year_idx]:
-            if extracted1["Years"][year_idx] != jcsv["Years"][year_idx]:
-                label.set_color("red")
-            else:
+        match, exv = models_agree(
+            extracted, "Years", idx=year_idx, agreement_count=agreement_count
+        )
+        if match:  # Models agree
+            if exv == jcsv["Years"][year_idx]:
                 label.set_color("blue")
-        else:
+            else:  # on the wrong answer
+                label.set_color("red")
+        else:  # Models disagree
             label.set_color("grey")
     ax.set_ylim(0.5, 13)
     if yticks:
@@ -289,7 +326,6 @@ def plot_monthly_table_agreement(ax, extracted1, extracted2, jcsv, yticks=True):
         )
     else:
         ax.set_yticks([])
-    ax.xaxis.set_label_position("top")
     ax.invert_yaxis()
     ax.set_aspect("auto")
 
@@ -311,20 +347,20 @@ def plot_monthly_table_agreement(ax, extracted1, extracted2, jcsv, yticks=True):
     for year_idx in range(10):
         for month in monthNumbers.keys():
             try:
-                exv1 = format_value(extracted1, month, year_idx)
-                exv2 = format_value(extracted2, month, year_idx)
-                rrv = format_value(jcsv, month, year_idx)
-                if exv1 == exv2:  # Models agree
-                    if exv1 == rrv:  # on the right answer
+                match, exv = models_agree(
+                    extracted, month, idx=year_idx, agreement_count=agreement_count
+                )
+                if match:  # Models agree
+                    if exv == jcsv[month][year_idx]:  # on the right answer
                         colour = (0, 0, 1)  # Blue
                     else:  # on the wrong answer
                         colour = (1, 0, 0)  # Red
                 else:  # Models disagree
-                    colour = (0.5, 0.5, 0.5)  # Grey
+                    colour = (0.5, 0.5, 0.5)
                 ax.text(
                     year_idx + 1,
                     monthNumbers[month],
-                    exv1,
+                    exv,
                     ha="center",
                     va="center",
                     fontsize=14,
@@ -453,19 +489,25 @@ def plot_totals(ax, extracted, jcsv):
 
 
 # Mark where multi models agreed - for totals
-def plot_totals_agreement(ax, extracted1, extracted2, jcsv):
+def plot_totals_agreement(
+    ax,
+    extracted,
+    jcsv,
+    agreement_count=2,
+):
     ax.set_xlim(0.5, 10.5)
     ax.set_ylim(0, 1)
     ax.set_xticks([])
     ax.set_yticks([])
 
     for year_idx in range(0, 10):
-        exv1 = format_value(extracted1, "Totals", year_idx)
-        exv2 = format_value(extracted2, "Totals", year_idx)
+        match, exv = models_agree(
+            extracted, "Totals", idx=year_idx, agreement_count=agreement_count
+        )
         rrv = format_value(jcsv, "Totals", year_idx)
 
-        if exv1 == exv2:  # Models agree
-            if exv1 == rrv:  # on the right answer
+        if match:  # Models agree
+            if exv == rrv:  # on the right answer
                 colour = (0, 0, 1)  # Blue
             else:  # on the wrong answer
                 colour = (1, 0, 0)  # Red
@@ -474,7 +516,7 @@ def plot_totals_agreement(ax, extracted1, extracted2, jcsv):
         ax.text(
             year_idx + 1,
             0.5,
-            exv1,
+            exv,
             ha="center",
             va="center",
             fontsize=14,
@@ -583,6 +625,9 @@ def load_extracted(model_id, label):
         elif isinstance(extracted[key], list) and len(extracted[key]) < 10:
             # Ensure lists have 10 items
             extracted[key] += ["N/A"] * (10 - len(extracted[key]))
+    # Fix boring common error
+    if extracted["Name"].lower().startswith("rainfall at"):
+        extracted["Name"] = extracted["Name"][12:]
     return extracted
 
 
