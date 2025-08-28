@@ -215,4 +215,4 @@ ax_totals = fig.add_axes([0.07, 0.05, 0.91, 0.07])
 plot_totals_fraction_agreement(ax_totals, merged)
 
 # Render
-fig.savefig("stats_agrement.webp")
+fig.savefig("stats_agreement.webp")
