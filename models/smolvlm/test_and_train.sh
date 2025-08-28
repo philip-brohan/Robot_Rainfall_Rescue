@@ -5,6 +5,10 @@
 # Don't just run this script - the earlier jobs must complete before the later ones start
 #  I should turn this into some sort of pipeline
 
+echo "Don't just run this script - you need to time it manually"
+echo "I just use it to hold the commands and run them with cut and paste"
+exit 1
+
 # Each job must have a globally unique name. Increment this number to avoid conflicts
 #  when running this script multiple times - it's only used in job names (no effect on outputs).
 icount=10

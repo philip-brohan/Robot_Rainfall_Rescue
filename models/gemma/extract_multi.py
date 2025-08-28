@@ -114,7 +114,7 @@ s_prompt = (
     + "The station name will follow the words 'RAINFALL at' in the top centre of the page. "
     + "The station number will be in the top-right corner of the page. "
     + "The page contains a table with monthly rainfall data for ten years,  "
-    + "The first row of the table gives the years. There will be 10 years. The first year will end in a 1, and the last year in a 0."
+    + "The first row of the table gives the years. There will be 10 years."
     + "The first column of the table is the month name, starting with January at the top and December at the bottom. "
     + "The bulk of the table gives values for each calendar month, in each of the ten years. "
     + "Each column is the data for one year, January at the top, December at the bottom. "

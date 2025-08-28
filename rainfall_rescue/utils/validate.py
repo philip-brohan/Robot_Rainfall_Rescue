@@ -42,9 +42,19 @@ def plot_two_colored_text(
 
 
 # Present extracted data as a %.2f string as far as possible
-def format_value(data, month, year_idx):
+def format_value(data, key, year_idx):
+    if key == "Name" or key == "Number":
+        try:
+            return data[key]
+        except KeyError:
+            return "N/A"
+    if key == "Years":
+        try:
+            return str(data[key][year_idx])
+        except (IndexError, KeyError):
+            return "N/A"
     try:
-        value = data[month][year_idx]
+        value = data[key][year_idx]
     except (IndexError, KeyError):
         return "N/A"
 
@@ -157,6 +167,42 @@ def plot_metadata_agreement(ax, extracted, jcsv, agreement_count=2):
 
 
 # Plot fractional success at metadata into a given axes
+def plot_metadata_fraction_agreement(ax, merged, cmp=None):
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    ymp = 0.8
+    for metad in ("Number", "Name"):
+        blue = merged[metad].count("blue") / len(merged[metad])
+        plot_two_colored_text(
+            ax,
+            0.05,
+            ymp,
+            "%s: " % metad,
+            "  %d" % int((blue) * 100),
+            size=12,
+            colour1="black",
+            colour2="blue",
+        )
+        red = merged[metad].count("red") / len(merged[metad])
+        if int(red * 100) > 0:
+            plot_two_colored_text(
+                ax,
+                0.05,
+                ymp - 0.15,
+                "%s: " % metad,
+                "  %d" % int((red) * 100),
+                size=12,
+                colour1="white",  # Invisible
+                colour2="red",
+            )
+
+        ymp -= 0.3
+
+
 def plot_metadata_fraction(ax, merged, cmp=None):
 
     ax.set_xlim(0, 1)
@@ -370,6 +416,82 @@ def plot_monthly_table_agreement(ax, extracted, jcsv, agreement_count=2, yticks=
                 continue
 
 
+def plot_monthly_table_fraction_agreement(ax, merged, cmp=None, yticks=True):
+    years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
+    ax.xaxis.set_ticks_position("top")
+    ax.xaxis.set_label_position("top")
+    ax.set_xticks(range(years[0], years[-1] + 1))
+    xtfraction = [
+        merged["Years"][year_idx].count("blue") / len(merged["Years"][year_idx])
+        for year_idx in range(10)
+    ]
+    xtl = [f"{int(fraction * 100)}" for fraction in xtfraction]
+    ax.set_xticklabels(xtl)
+    ax.set_ylim(0.5, 13)
+    if yticks:
+        ax.set_yticks(range(1, 13))
+        ax.set_yticklabels(
+            (
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            )
+        )
+    else:
+        ax.set_yticks([])
+    ax.invert_yaxis()
+    ax.set_aspect("auto")
+
+    monthNumbers = {
+        "January": 1,
+        "February": 2,
+        "March": 3,
+        "April": 4,
+        "May": 5,
+        "June": 6,
+        "July": 7,
+        "August": 8,
+        "September": 9,
+        "October": 10,
+        "November": 11,
+        "December": 12,
+    }
+
+    for year in years:
+        for month in monthNumbers.keys():
+            blue = merged[month][year - 1].count("blue") / len(merged[month][year - 1])
+            ax.text(
+                year,
+                monthNumbers[month],
+                f"{int(blue * 100)}",
+                ha="center",
+                va="center",
+                fontsize=12,
+                color="blue",
+            )
+            red = merged[month][year - 1].count("red") / len(merged[month][year - 1])
+            if (int(red * 100)) > 0:
+                ax.text(
+                    year,
+                    monthNumbers[month] + 0.5,
+                    f"{int(red * 100)}",
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    color="red",
+                )
+
+
 def plot_monthly_table_fraction(ax, merged, cmp=None, yticks=True):
     years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
@@ -524,6 +646,39 @@ def plot_totals_agreement(
         )
 
 
+def plot_totals_fraction_agreement(ax, merged, cmp=None):
+    years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
+    ax.set_ylim(0, 1)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    for year in years:
+        blue = merged["Totals"][year - 1].count("blue") / len(
+            merged["Totals"][year - 1]
+        )
+        ax.text(
+            year,
+            0.7,
+            f"{int(blue * 100)}",
+            ha="center",
+            va="center",
+            fontsize=12,
+            color="blue",
+        )
+        red = merged["Totals"][year - 1].count("red") / len(merged["Totals"][year - 1])
+        if (int(red * 100)) > 0:
+            ax.text(
+                year,
+                0.3,
+                f"{int(red * 100)}",
+                ha="center",
+                va="center",
+                fontsize=12,
+                color="red",
+            )
+
+
 def plot_totals_fraction(ax, merged, cmp=None):
     years = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     ax.set_xlim(years[0] - 0.5, years[-1] + 0.5)
@@ -597,10 +752,20 @@ def jsonfix(input):
     )  # Get rid of line breaks and other non-printable characters
     # Deal with bad terminations
     if not fixed.endswith("]}"):
-        fixed = fixed[
-            : fixed.rfind("]}") + 2
-        ]  # Might cut off too much, but if so we're screwed anyway.
+        fixed = (
+            fixed[: fixed.rfind("]") + 1] + "}"
+        )  # Might cut off too much, but if so we're screwed anyway.
+    # Get rid of any junk after the totals
+    last_match = None
+    for m in re.finditer(r'"Totals"\s*:\s*\[.*?\]', fixed, flags=re.DOTALL):
+        last_match = m
+    fixed = fixed[: last_match.end()] + "}" if last_match else fixed
     return fixed
+
+
+# map JSON jeys like 'TOTALS' to 'Totals'
+def cap_first_key(k: str) -> str:
+    return k[:1].upper() + k[1:] if isinstance(k, str) else k
 
 
 # Load the extracted data from a model, for a label
@@ -628,6 +793,7 @@ def load_extracted(model_id, label):
     # Fix boring common error
     if extracted["Name"].lower().startswith("rainfall at"):
         extracted["Name"] = extracted["Name"][12:]
+    extracted = {cap_first_key(k): v for k, v in extracted.items()}
     return extracted
 
 

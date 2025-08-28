@@ -17,7 +17,7 @@ from torch.utils.data import Dataset
 from transformers import (
     AutoProcessor,
     AutoModelForImageTextToText,
-    BitsAndBytesConfig,
+    TrainerCallback,
 )
 
 from peft import LoraConfig, PeftModel
@@ -31,13 +31,6 @@ parser.add_argument(
     type=str,
     required=False,
     default="google/gemma-3-4b-it",
-)
-parser.add_argument(
-    "--quantize",
-    help="Quantize the model",
-    action="store_true",
-    required=False,
-    default=False,
 )
 parser.add_argument(
     "--nmax",
@@ -82,7 +75,7 @@ parser.add_argument(
     default=600,
 )
 
-args = parser.parse_args()
+clargs = parser.parse_args()
 
 
 # System message for the assistant
@@ -93,7 +86,7 @@ system_message = (
     + "The station name will follow the words 'RAINFALL at' in the top centre of the page. "
     + "The station number will be in the top-right corner of the page. "
     + "The page contains a table with monthly rainfall data for ten years,  "
-    + "The first row of the table gives the years. There will be 10 years. The first year will end in a 1, and the last year in a 0."
+    + "The first row of the table gives the years. There will be 10 years."
     + "The first column of the table is the month name, starting with January at the top and December at the bottom. "
     + "The bulk of the table gives values for each calendar month, in each of the ten years. "
     + "Each column is the data for one year, January at the top, December at the bottom. "
@@ -123,8 +116,8 @@ def format_data(sample):
     assistant_message = csv_to_json(sample[2])
     # Cut the image into squares
     img = sample[1]
-    if args.patch_size is not None:
-        blocks = cut_image(img, args.patch_size, overlap=0.1)
+    if clargs.patch_size is not None:
+        blocks = cut_image(img, clargs.patch_size, overlap=0.1)
     else:
         blocks = [img]  # Use the whole image if no patch size is specified
 
@@ -156,7 +149,7 @@ def format_data(sample):
 class RRTrainingDataset(Dataset):
     def __init__(self, max_n=None, seed=None):
         self.labels = get_index_list(
-            max_n=max_n, seed=seed, fake=args.fake, training=True
+            max_n=max_n, seed=seed, fake=clargs.fake, training=True
         )
 
     def __len__(self):
@@ -167,7 +160,7 @@ class RRTrainingDataset(Dataset):
         return self.labels[idx], img, csv
 
 
-dataset = RRTrainingDataset(max_n=args.nmax, seed=args.random_seed)
+dataset = RRTrainingDataset(max_n=clargs.nmax, seed=clargs.random_seed)
 # Convert dataset to OAI messages
 dataset = [format_data(sample) for sample in dataset]
 
@@ -179,20 +172,10 @@ model_kwargs = dict(
     device_map="auto",  # Let torch decide how to load the model
 )
 
-# BitsAndBytesConfig int-4 config
-if args.quantize:
-    model_kwargs["quantization_config"] = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=model_kwargs["torch_dtype"],
-        bnb_4bit_quant_storage=model_kwargs["torch_dtype"],
-    )
-
 # Load model and tokenizer
-model = AutoModelForImageTextToText.from_pretrained(args.model_id, **model_kwargs)
+model = AutoModelForImageTextToText.from_pretrained(clargs.model_id, **model_kwargs)
 
-processor = AutoProcessor.from_pretrained(args.model_id)
+processor = AutoProcessor.from_pretrained(clargs.model_id)
 
 peft_config = LoraConfig(
     lora_alpha=16,
@@ -210,8 +193,8 @@ from trl import SFTConfig
 
 sargs = SFTConfig(
     output_dir="%s/%s"
-    % (os.getenv("PDIR"), args.run_id),  # directory to save and repository id
-    num_train_epochs=args.epochs,  # number of training epochs
+    % (os.getenv("PDIR"), clargs.run_id),  # directory to save and repository id
+    num_train_epochs=clargs.epochs,  # number of training epochs
     per_device_train_batch_size=1,  # batch size per device during training
     gradient_accumulation_steps=4,  # number of steps before performing a backward/update pass
     gradient_checkpointing=True,  # use gradient checkpointing to save memory
@@ -226,7 +209,7 @@ sargs = SFTConfig(
     push_to_hub=False,  # push model to hub
     report_to="tensorboard",  # report metrics to tensorboard
     logging_dir="%s/%s/logs"
-    % (os.getenv("PRIR"), args.run_id),  # directory to save logs
+    % (os.getenv("PDIR"), clargs.run_id),  # directory to save logs
     gradient_checkpointing_kwargs={
         "use_reentrant": False
     },  # use reentrant checkpointing
@@ -295,6 +278,38 @@ def collate_fn(examples):
     return batch
 
 
+# Define a callback to save a merged version of the model at the end of each epoch
+class SaveMergedCallback(TrainerCallback):
+    def __init__(self, base_model_id, out_dir):
+        self.base_model_id = base_model_id
+        self.out_dir = out_dir
+
+    # Called at end of epoch
+    def on_epoch_end(self, args, state, control, **kwargs):
+        print("[SaveMergedCallback] on_epoch_end called")
+        trainer.save_model()
+        torch.cuda.empty_cache()
+        model = AutoModelForImageTextToText.from_pretrained(
+            clargs.model_id, low_cpu_mem_usage=True
+        )
+        # Merge LoRA and base model and save
+        peft_model = PeftModel.from_pretrained(model, sargs.output_dir)
+        merged_model = peft_model.merge_and_unload()
+        merged_dir = os.path.join(
+            sargs.output_dir, f"merged_epoch_{int(getattr(state,'epoch',0))}"
+        )
+        os.makedirs(merged_dir, exist_ok=True)
+        merged_model.save_pretrained(
+            merged_dir, safe_serialization=True, max_shard_size="2GB"
+        )
+        # Also need to save the processor and tokenizer to make a reusable model
+        processor.save_pretrained(merged_dir)
+        processor.tokenizer.save_pretrained(merged_dir)
+        del merged_model
+        del peft_model
+        torch.cuda.empty_cache()
+
+
 trainer = SFTTrainer(
     model=model,
     args=sargs,
@@ -302,6 +317,7 @@ trainer = SFTTrainer(
     peft_config=peft_config,
     processing_class=processor,
     data_collator=collate_fn,
+    callbacks=[SaveMergedCallback(clargs.model_id, sargs.output_dir)],
 )
 
 
@@ -313,25 +329,25 @@ try:
 except ValueError as e:
     trainer.train(resume_from_checkpoint=False)  # No checkpoint, start from scratch
 
-# Save the final model
-trainer.save_model()
-# free the memory again
-del model
-del trainer
-torch.cuda.empty_cache()
+# # Save the final model
+# trainer.save_model()
+# # free the memory again
+# del model
+# del trainer
+# torch.cuda.empty_cache()
 
 
-# We trained a LORA model, that's additional weights instead of of the base model.
-# We need to merge the LORA weights with the base model weights to make a new base model
+# # We trained a LORA model, that's additional weights instead of changing the base model.
+# # We need to merge the LORA weights with the base model weights to make a new stand-alone model
 
-# Load Model base model
-model = AutoModelForImageTextToText.from_pretrained(
-    args.model_id, low_cpu_mem_usage=True
-)
+# # Load Model base model
+# model = AutoModelForImageTextToText.from_pretrained(
+#     args.model_id, low_cpu_mem_usage=True
+# )
 
-# Merge LoRA and base model and save
-peft_model = PeftModel.from_pretrained(model, sargs.output_dir)
-merged_model = peft_model.merge_and_unload()
-merged_model.save_pretrained(
-    "merged_model", safe_serialization=True, max_shard_size="2GB"
-)
+# # Merge LoRA and base model and save
+# peft_model = PeftModel.from_pretrained(model, sargs.output_dir)
+# merged_model = peft_model.merge_and_unload()
+# merged_model.save_pretrained(
+#     "merged_model", safe_serialization=True, max_shard_size="2GB"
+# )

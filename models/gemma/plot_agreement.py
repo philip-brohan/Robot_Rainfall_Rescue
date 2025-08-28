@@ -4,9 +4,7 @@
 # how well multiple models agree on the digitised values.
 
 from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
-from rainfall_rescue.utils.validate import (
-    load_extracted,
-    plot_image,
+FineTuned/ibm-granite/granite-vision-3.3-2b/hpb_1/fake/nm_1000/rs_42/merged_epoch_12 TYRain_1920-1930_06_pt1-page-100    plot_image,
     plot_metadata_agreement,
     plot_monthly_table_agreement,
     plot_totals_agreement,
