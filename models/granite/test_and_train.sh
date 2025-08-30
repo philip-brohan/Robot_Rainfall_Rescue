@@ -7,12 +7,12 @@
 
 # Each job must have a globally unique name. Increment this number to avoid conflicts
 #  when running this script multiple times - it's only used in job names (no effect on outputs).
-icount=3
+icount=10
 
 # Hyperparameter batch number
 #  This is used to distinguish between different hyperparameter settings in training
 #  Hyperparameters are set in the train.py script
-hpbatch=1
+hpbatch=2
 
 # We're doing 12 epochs of training. Which epoch are we using for testing?
 epoch=12

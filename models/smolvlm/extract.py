@@ -14,6 +14,9 @@ import torch
 import argparse
 import random
 
+# Text prompts - system and user
+from models.smolvlm.prompts import s_prompt, u_prompt
+
 # Specify the model ID and image label
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -69,35 +72,6 @@ model = AutoModelForImageTextToText.from_pretrained(
     _attn_implementation="eager",  # "flash_attention_2" if device == "cuda" else "eager",
 ).to(device)
 
-# System prompt
-s_prompt = (
-    "You are a climate scientist. Your task is to extract climate data from pages containing historical observations. "
-    + "The page you are working on is a record of monthly rainfall from one UK weather station. "
-    + "At the top of each page is the name of a weather station, and the number of the station. "
-    + "The station name will follow the words 'RAINFALL at' in the top centre of the page. "
-    + "The station number will be in the top-right corner of the page. "
-    + "The page contains a table with monthly rainfall data for ten years,  "
-    + "The first row of the table gives the years. There will be 10 years."
-    + "The first column of the table is the month name, starting with January at the top and December at the bottom. "
-    + "The bulk of the table gives values for each calendar month, in each of the ten years. "
-    + "Each column is the data for one year, January at the top, December at the bottom. "
-    + "There is sometimes an extra column on the right (after the last year) - ignore this column. "
-    + "Each row is the data for one calendar month, with the first year on the left and the last year on the right. "
-    + "At the bottom of the table is an extra row with totals for each year. "
-    + "Sometimes some of the data values are missing, left blank. For missing values, return 'null'."
-    + "Report the data in a JSON format. Don't include any other text. "
-)
-
-u_prompt = (
-    "Output the data as a JSON object with the following structure:\n "
-    + '{"Name":"<name>",'
-    + '"Number":"<number>",'
-    + '"Years":[<year1>,<year2>, ...],'
-    + '"January":[<value1>,<value2>, ...],'
-    + '"February":[<value1>,<value2>, ...],'
-    + " And so on for months April to December"
-    + '"Totals": [<total1>,<total2>,...]}'
-)
 
 messages = [
     {

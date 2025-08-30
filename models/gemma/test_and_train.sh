@@ -12,7 +12,7 @@ exit 1
 
 # Each job must have a globally unique name. Increment this number to avoid conflicts
 #  when running this script multiple times - it's only used in job names (no effect on outputs).
-icount=10 
+icount=20 
 
 # which size model to use
 size="4b" # 4b or 12b - bigger ones don't it on the GPU
@@ -20,7 +20,7 @@ size="4b" # 4b or 12b - bigger ones don't it on the GPU
 # Hyperparameter batch number
 #  This is used to distinguish between different hyperparameter settings in training
 #  Hyperparameters are set in the train.py script
-hpbatch=1
+hpbatch=2
 
 # We're doing 12 epochs of training. Which epoch are we using for testing?
 epoch=12
@@ -31,7 +31,7 @@ epoch=12
 # Extract real test cases with the original model
 ../../azure_tools/azure_run.py --experiment=gemma_$size\_1 --name=extract_gm_$size\_r_$icount --compute=H100x1 -- ./extract_multi.py --model_id=google/gemma-3-$size-it --image_count=100 --random_seed=42
 
-# Wait for the extractions to finish (6 hours?)
+# Wait for the extractions to finish (30 minutes?)
 
 # Copy the original test results to the local system
 ../../azure_tools/azure_download.py --remote=Robot_Rainfall_Rescue/extracted/google/gemma-3-$size-it/ --local=$PDIR/extracted/google/gemma-3-$size-it/

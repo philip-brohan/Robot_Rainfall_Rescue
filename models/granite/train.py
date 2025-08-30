@@ -20,6 +20,8 @@ from transformers import AutoProcessor, AutoModelForImageTextToText, TrainerCall
 from peft import LoraConfig, PeftModel
 from trl import SFTTrainer
 
+# Text prompts - system and user
+from models.smolvlm.prompts import s_prompt, u_prompt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -131,7 +133,7 @@ def format_data(sample):
         "messages": [
             {
                 "role": "system",
-                "content": [{"type": "text", "text": system_message}],
+                "content": [{"type": "text", "text": s_prompt}],
             },
             {
                 "role": "user",
@@ -139,11 +141,11 @@ def format_data(sample):
                 + [
                     {
                         "type": "text",
-                        "text": system_message,
+                        "text": s_prompt,
                     },
                     {
                         "type": "text",
-                        "text": user_prompt,
+                        "text": u_prompt,
                     },
                 ],
             },

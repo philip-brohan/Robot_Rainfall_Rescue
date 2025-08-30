@@ -129,6 +129,8 @@ def models_agree(extracted, value, idx=None, agreement_count=2):
         values.append(val)
     counts = Counter(values)
     top_two = counts.most_common(2)
+    if top_two[0][0] == "N/A":  # Special case - 'agreed' on "can't do it"
+        return (False, "N/A")  # Not counted as agreement
     if len(top_two) < 2:
         return (True, top_two[0][0])  # Only one unique value
     if top_two[0][1] == top_two[1][1]:  # No one most common value

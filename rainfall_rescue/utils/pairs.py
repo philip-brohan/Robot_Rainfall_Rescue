@@ -4,6 +4,7 @@ import os
 import csv
 import json
 import random
+import re
 
 from PIL import Image
 
@@ -63,7 +64,16 @@ def csv_to_json(csv_data):
         str: JSON string representation of the CSV data.
     """
     csv_data["Number"] = str(csv_data["Number"])  # Easier if this is a string
-    j = json.dumps(csv_data, separators=(",", ":"))
+    j = json.dumps(csv_data, separators=(",\n", ":"))
+    # reformat to match LLM schema
+    j = re.sub(
+        r"\[([^\]]*)\]",
+        lambda m: "[" + m.group(1).replace("\r", "").replace("\n", "") + "]",
+        j,
+        flags=re.DOTALL,
+    )
+    j = j.replace("{", "{\n")
+    j = j.replace("}", "\n}")
     return j
 
 
