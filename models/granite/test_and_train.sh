@@ -48,3 +48,6 @@ epoch=12
 
 # Copy the fake test results to the local system
 ../../azure_tools/azure_download.py --remote=Robot_Rainfall_Rescue/extracted/FineTuned/ibm-granite/granite-vision-3.3-2b/ --local=$PDIR/extracted/FineTuned/ibm-granite/granite-vision-3.3-2b/
+
+# Make bootstrapped training data with the original model (fake data training makes Granite worse)
+../../azure_tools/azure_run.py --experiment=granite_1 --name=bstd_gr_$icount --compute=H100x1 -- ./extract_multi.py --model_id=ibm-granite/granite-vision-3.3-2b --image_count=1000 --random_seed=42 --purpose=Training

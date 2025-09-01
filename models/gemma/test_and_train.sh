@@ -57,3 +57,6 @@ epoch=12
 
 # Copy the fine-tuned test results to the local system
 ../../azure_tools/azure_download.py --remote=Robot_Rainfall_Rescue/extracted/FineTuned/google/gemma-3-$size-it --local=$PDIR/extracted/FineTuned/google/gemma-3-$size-it
+
+# Make bootstrapped training data with the model fine-tuned on fake data
+../../azure_tools/azure_run.py --experiment=gemma_$size\_1 --name=bstd_gm_$size\_f_$hpbatch\_r_$epoch\_$icount --compute=H100x1 -- ./extract_multi.py --model_id=FineTuned/google/gemma-3-$size-it/hpb_$hpbatch/fake/nm_1000/rs_42/merged_epoch_$epoch --image_count=1000 --random_seed=42  --purpose=Training

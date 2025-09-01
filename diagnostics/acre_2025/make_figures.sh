@@ -131,5 +131,5 @@ mv stats_agreement.webp smolvlm_gemma_granite_agreement_stats.webp
 mv stats_agreement.webp smolvlm_gemma_granite_agreement_fake_stats.webp
 
 # show 3-model agreement stats with smolvlm and gemma trained on fake data
-../../models/gemma/plot_stats_agreement.py --model_ids=FineTuned/HuggingFaceTB/SmolVLM-Instruct/hpb_2/fake/nm_1000/rs_42/merged_epoch_12,FineTuned/google/gemma-3-4b-it/hpb_2/fake/nm_1000/rs_42/merged_epoch_12,ibm-granite/granite-vision-3.3-2b
+../../models/gemma/plot_stats_agreement.py --model_ids=FineTuned/HuggingFaceTB/SmolVLM-Instruct/hpb_2/fake/nm_1000/rs_42/merged_epoch_12,FineTuned/google/gemma-3-4b-it/hpb_2/fake/nm_1000/rs_42/merged_epoch_12,ibm-granite/granite-vision-3.3-2b --agreement_count=3
 mv stats_agreement.webp smolvlm_gemma_granite_agreement_fake_stats.webp

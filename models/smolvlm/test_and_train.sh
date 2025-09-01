@@ -54,3 +54,6 @@ epoch=12
 
 # Copy the test results to the local system
 ../../azure_tools/azure_download.py --remote=Robot_Rainfall_Rescue/extracted/FineTuned/HuggingFaceTB/SmolVLM-Instruct --local=$PDIR/extracted/FineTuned/HuggingFaceTB/SmolVLM-Instruct
+
+# Make bootstrapped training data with the model fine-tuned on fake data
+../../azure_tools/azure_run.py --experiment=smolvlm_1 --name=bstd_sm_$hpbatch\_f_$epoch\_$icount --compute=H100x1 -- ./extract_multi.py --model_id=FineTuned/HuggingFaceTB/SmolVLM-Instruct/hpb_$hpbatch/fake/nm_1000/rs_42/merged_epoch_$epoch --image_count=1000 --random_seed=42 --purpose=Training
