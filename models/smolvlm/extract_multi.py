@@ -88,6 +88,11 @@ labels = get_index_list(
 )
 for label in labels:
     print(f"Using label: {label}")
+    # Check to see if it's already been done (job might be restarting after being preempted)
+    opfile = f"{os.getenv('PDIR')}/extracted/{args.model_id}/{label}.json"
+    if os.path.exists(opfile):
+        print(f"{label} already done - skipping")
+        continue
 
     # Load the image and CSV data
     img, csv = load_pair(label)
