@@ -133,6 +133,7 @@ dmypy.json
 *.pdf
 *.webp
 *.jpg
+*.JPG
 
 # Apple crap
 Thumbs.db
