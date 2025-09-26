@@ -141,6 +141,7 @@ Thumbs.db
 # Temporary data 
 *.pkl
 *.out
+*_stats.txt
 
 # SCRATCH dir
 SCRATCH
