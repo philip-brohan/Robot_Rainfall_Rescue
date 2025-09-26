@@ -86,38 +86,6 @@ clargs = parser.parse_args()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# System message for the assistant
-system_message = (
-    "You are a climate scientist. Your task is to extract climate data from pages containing historical observations. "
-    + "The page you are working on is a record of monthly rainfall from one UK weather station. "
-    + "At the top of each page is the name of a weather station, and the number of the station. "
-    + "The station name will follow the words 'RAINFALL at' in the top centre of the page. "
-    + "The station number will be in the top-right corner of the page. "
-    + "The page contains a table with monthly rainfall data for ten years,  "
-    + "The first row of the table gives the years. There will be 10 years. "
-    + "The first column of the table is the month name, starting with January at the top and December at the bottom. "
-    + "The bulk of the table gives values for each calendar month, in each of the ten years. "
-    + "Each column is the data for one year, January at the top, December at the bottom. "
-    + "There is sometimes an extra column on the right (after the last year) - ignore this column. "
-    + "Each row is the data for one calendar month, with the first year on the left and the last year on the right. "
-    + "At the bottom of the table is an extra row with totals for each year. "
-    + "Sometimes some of the data values are missing, left blank. For missing values, return 'null'."
-    + "Report the data in a JSON format. Don't include any other text. "
-)
-
-# User prompt that combines the user query and the schema
-user_prompt = (
-    "Output the data as a JSON object with the following structure:\n "
-    + '{"Name":"<name>",'
-    + '"Number":"<number>",'
-    + '"Years":[<year1>,<year2>, ...],'
-    + '"January":[<value1>,<value2>, ...],'
-    + '"February":[<value1>,<value2>, ...],'
-    + " And so on for months April to December"
-    + '"Totals": [<total1>,<total2>, ...]}'
-)
-
-
 # Convert dataset to OAI messages
 def format_data(sample):
     # Desired output is JSON ormated csv data

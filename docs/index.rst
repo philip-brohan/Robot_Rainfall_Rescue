@@ -47,6 +47,15 @@ A single small VLM: SmolVLM
 
    SmolVLM performance on a single image. Text in black is where the model is correct, in red shows where it is wrong (and where it is wrong, the correct value is given underneath in blue). This is a relatively easy example, with no missing data.
 
+
+.. toctree::
+   :maxdepth: 1
+
+   Use SmolVLM to extract data from a single image <models/smolvlm/extract>
+   Prompts used to control the extraction <models/smolvlm/prompts>
+   Plot the results <models/gemma/plot_image+extracted>
+
+
 .. figure:: illustrations/SmolVLM_raw_hard.jpg
    :width: 95%
    :align: center
@@ -64,15 +73,23 @@ A single small VLM: SmolVLM
 .. toctree::
    :maxdepth: 1
 
-   Prompts used by the models <models/smolvlm/prompts>
-   Run SmolVLM on a single example image <models/smolvlm/extract>
    Run SmolVLM on a set of images <models/smolvlm/extract_multi>
-   Model output diagnostic scripts <models/gemma/diagnostics>
+   Plot percentage success rate <models/gemma/plot_stats>
    
 
 
 An ensemble of VLMs
 -------------------
+
+If your model has some skill, but not enough, try some other models:
+
+.. toctree::
+   :maxdepth: 1
+
+   Google Gemma-3-4b <models/gemma/gemma>
+   IBM Granite <models/granite/granite>
+
+Gemma and Granite have the same fundamental issues as SmolVLM, each is better in some respects, but none is god enough to use alone. But what if we combine them? An ensemble of models often outperforms any individual model - the ensemble mean is an improved best estimate, and the ensemble spread is a useful measure of uncertainty. We won't do exactly that here, because we are looking for categorical values (the numbers in the table), but we can look for agreement between models. What if we look for cases where 2 or more models agree on a value?
 
 .. figure:: illustrations/SmolVLM_Granite_Gemma_raw_example.jpg
    :width: 95%
@@ -81,12 +98,23 @@ An ensemble of VLMs
 
    Example results from the three-model ensemble (untrained). Values in blue show where 2 or more models agree on a value, and that value is correct. Values in red show where 2 or more models agree on a value, but that value is wrong. Values in grey show where there is no agreement among the models.
 
+.. toctree::
+   :maxdepth: 1
+
+   Plot multi-model results compared with a sample image <models/gemma/plot_agreement>
+
 .. figure:: illustrations/SmolVLM_Granite_Gemma_raw_stats.jpg
    :width: 95%
    :align: center
    :figwidth: 95%
 
    Percentage success rate for each position in the table, for the three model ensemble. Value in blue is the percentage of values where 2 or more models agree, and that value is correct. Value in red is the percentage of values where 2 or more models agree, but that value is wrong. 
+
+.. toctree::
+   :maxdepth: 1
+
+   Plot multi-model statistics over a set of images <models/gemma/plot_stats_agreement>
+
 
 Training the models
 -------------------
@@ -98,12 +126,24 @@ Training the models
 
    Training SmolVLM. The model is fine-tuned using a set of 1000 images with known values. The training process (12 epochs) takes about 3 hours on a single 80Gb H100 GPU.
 
+.. toctree::
+   :maxdepth: 1
+
+   Train SmolVLM <models/smolvlm/train>
+
+
 .. figure:: illustrations/SmolVLM_raw_v_trained_example.jpg
    :width: 95%
    :align: center
    :figwidth: 95%
 
    Example results from SmolVLM. Original in the centre, after training on the right. Text in black is where the model is correct, in red shows where it is wrong (and where it is wrong, the correct value is given underneath in blue).
+
+.. toctree::
+   :maxdepth: 1
+
+   Show comparison between two models for a single image <models/gemma/plot_image+comparison>
+
 
 .. figure:: illustrations/SmolVLM_trained_stats.jpg
    :width: 95%
@@ -122,6 +162,11 @@ An ensemble of trained models
 
    We can do the same fine-tuneing, on the same training set, on all three models.
 
+.. toctree::
+   :maxdepth: 1
+
+   Train Gemma <models/gemma/train>
+   Train Granite <models/granite/train>
 
 .. figure:: illustrations/SmolVLM_Granite_Gemma_trained_example.jpg
    :width: 95%
