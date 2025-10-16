@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Granite: Extract data from a single image &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Granite: Extract data from a set of images" href="extract_multi.html" />
+    <link rel="prev" title="Granite run alone" href="granite.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="extract_multi.html" title="Granite: Extract data from a set of images"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="granite.html" title="Granite run alone"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="granite.html" accesskey="U">Granite run alone</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Granite: Extract data from a single image</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="granite-extract-data-from-a-single-image">
+<h1>Granite: Extract data from a single image<a class="headerlink" href="#granite-extract-data-from-a-single-image" title="Link to this heading">¶</a></h1>
+<p>Much the same as the <a class="reference internal" href="../smolvlm/extract.html"><span class="doc">script to run SmolVLM</span></a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="c1"># Run the IBM Granite model and extract data from a RR image</span>
+<span class="c1"># Output the extracted data as a JSON structure</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">RR_utils.hf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFlogin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">RR_utils.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">cut_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rainfall_rescue.utils.pairs</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_index_list</span><span class="p">,</span> <span class="n">load_pair</span><span class="p">,</span> <span class="n">csv_to_json</span>
+
+<span class="n">HFlogin</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoProcessor</span><span class="p">,</span> <span class="n">AutoModelForImageTextToText</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+<span class="c1"># Text prompts - system and user</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.smolvlm.prompts</span><span class="w"> </span><span class="kn">import</span> <span class="n">s_prompt</span><span class="p">,</span> <span class="n">u_prompt</span>
+
+<span class="c1"># Specify the model ID and image label</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--model_id&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model ID&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ibm-granite/granite-vision-3.3-2b&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--label&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Image identifier&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--fake&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use fake data - not real&quot;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--patch_size&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Image patch size (pixels)&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">get_index_list</span><span class="p">(</span><span class="n">fake</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">fake</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Label not specified. Using random label: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Load the image and CSV data</span>
+<span class="n">img</span><span class="p">,</span> <span class="n">csv</span> <span class="o">=</span> <span class="n">load_pair</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<span class="c1"># Cut the image into blocks</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">patch_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="n">cut_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">img</span><span class="p">]</span>  <span class="c1"># Use the whole image if no patch size is specified</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cut image into </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks of size </span><span class="si">{</span><span class="n">blocks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+
+<span class="c1"># Load the model and processor</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PDIR&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="n">model_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PDIR&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading model from local directory: </span><span class="si">{</span><span class="n">model_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;ibm-granite/granite-vision-3.3-2b&quot;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+
+<span class="n">conversation</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">s_prompt</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">u_prompt</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+    <span class="n">conversation</span><span class="p">,</span>
+    <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="n">input_len</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
+    <span class="n">generation</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+        <span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">do_sample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">top_p</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">generation</span> <span class="o">=</span> <span class="n">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">input_len</span><span class="p">:]</span>
+
+<span class="n">decoded</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">csv_to_json</span><span class="p">(</span><span class="n">csv</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">decoded</span><span class="p">)</span>
+<span class="n">Result</span> <span class="o">=</span> <span class="n">decoded</span><span class="p">[</span><span class="n">decoded</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span> <span class="p">:</span> <span class="n">decoded</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">Result</span> <span class="o">=</span> <span class="n">decoded</span>
+
+<span class="c1"># Store the extracted values in a file</span>
+<span class="n">opfile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PDIR&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/extracted/</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">.json&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">opfile</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">opfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Result</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Code to train Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="extract_multi.html" title="Granite: Extract data from a set of images"
+             >next</a></li>
+        <li class="right" >
+          <a href="granite.html" title="Granite run alone"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="granite.html" >Granite run alone</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Granite: Extract data from a single image</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Plot image and compare data extracted by two models &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How to reproduce and extend this work" href="../../how_to.html" />
+    <link rel="prev" title="SmolVLM: Train against a sample of images with transcriptions" href="../smolvlm/train.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../how_to.html" title="How to reproduce and extend this work"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../smolvlm/train.html" title="SmolVLM: Train against a sample of images with transcriptions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Plot image and compare data extracted by two models</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="plot-image-and-compare-data-extracted-by-two-models">
+<h1>Plot image and compare data extracted by two models<a class="headerlink" href="#plot-image-and-compare-data-extracted-by-two-models" title="Link to this heading">¶</a></h1>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="c1"># Plot a 10-year monthly rainfall image and compare the data</span>
+<span class="c1">#  two gemma versions got from it.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rainfall_rescue.utils.pairs</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_index_list</span><span class="p">,</span> <span class="n">load_pair</span><span class="p">,</span> <span class="n">csv_to_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rainfall_rescue.utils.validate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">load_extracted</span><span class="p">,</span>
+    <span class="n">plot_image</span><span class="p">,</span>
+    <span class="n">plot_metadata</span><span class="p">,</span>
+    <span class="n">plot_monthly_table</span><span class="p">,</span>
+    <span class="n">plot_totals</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backends.backend_agg</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureCanvasAgg</span> <span class="k">as</span> <span class="n">FigureCanvas</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--model_id_1&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model ID&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;google/gemma-3-4b-it&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--model_id_2&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model ID&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;google/gemma-3-12b-it&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--label&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Image identifier&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--fake&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use fake data - not real&quot;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">get_index_list</span><span class="p">(</span><span class="n">fake</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">fake</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">fake</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># load the image/data pair</span>
+<span class="n">img</span><span class="p">,</span> <span class="n">csv</span> <span class="o">=</span> <span class="n">load_pair</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<span class="n">jcsv</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">csv_to_json</span><span class="p">(</span><span class="n">csv</span><span class="p">))</span>
+
+<span class="c1"># Load the model extracted data</span>
+<span class="n">extracted_1</span> <span class="o">=</span> <span class="n">load_extracted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_id_1</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<span class="n">extracted_2</span> <span class="o">=</span> <span class="n">load_extracted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_id_2</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+
+<span class="c1"># Create the figure</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">Figure</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>  <span class="c1"># Width, Height (inches)</span>
+    <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">facecolor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">subplotpars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">tight_layout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">FigureCanvas</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+<span class="c1"># Image in the left</span>
+<span class="n">ax_original</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.32</span><span class="p">,</span> <span class="mf">0.96</span><span class="p">])</span>
+<span class="n">plot_image</span><span class="p">(</span><span class="n">ax_original</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+
+<span class="c1"># First model in the middle</span>
+<span class="n">ax_metadata1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">])</span>
+<span class="n">plot_metadata</span><span class="p">(</span><span class="n">ax_metadata1</span><span class="p">,</span> <span class="n">extracted_1</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">)</span>
+
+<span class="n">ax_digitised1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.63</span><span class="p">])</span>
+<span class="n">plot_monthly_table</span><span class="p">(</span><span class="n">ax_digitised1</span><span class="p">,</span> <span class="n">extracted_1</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">)</span>
+
+<span class="n">ax_totals1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">])</span>
+<span class="n">plot_totals</span><span class="p">(</span><span class="n">ax_totals1</span><span class="p">,</span> <span class="n">extracted_1</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">)</span>
+
+<span class="c1"># Second model on the right</span>
+<span class="n">ax_metadata2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.67</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">])</span>
+<span class="n">plot_metadata</span><span class="p">(</span><span class="n">ax_metadata2</span><span class="p">,</span> <span class="n">extracted_2</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">)</span>
+
+<span class="n">ax_digitised2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.67</span><span class="p">,</span> <span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.63</span><span class="p">])</span>
+<span class="n">plot_monthly_table</span><span class="p">(</span><span class="n">ax_digitised2</span><span class="p">,</span> <span class="n">extracted_2</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="n">yticks</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ax_totals2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.67</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.31</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">])</span>
+<span class="n">plot_totals</span><span class="p">(</span><span class="n">ax_totals2</span><span class="p">,</span> <span class="n">extracted_2</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">)</span>
+
+
+<span class="c1"># Render</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;compare.webp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract.html">Use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_image%2Bextracted.html">Plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract_multi.html">Run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gemma.html">Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/granite.html">IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plot_agreement.html">Plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plot_stats_agreement.html">Plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/train.html">Train SmolVLM</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../how_to.html" title="How to reproduce and extend this work"
+             >next</a></li>
+        <li class="right" >
+          <a href="../smolvlm/train.html" title="SmolVLM: Train against a sample of images with transcriptions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Plot image and compare data extracted by two models</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

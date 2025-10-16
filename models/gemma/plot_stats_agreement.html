@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Multi-model agreement: statistics of set of images &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="SmolVLM: Train against a sample of images with transcriptions" href="../smolvlm/train.html" />
+    <link rel="prev" title="Multi-model agreement: single image" href="plot_agreement.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../smolvlm/train.html" title="SmolVLM: Train against a sample of images with transcriptions"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_agreement.html" title="Multi-model agreement: single image"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Multi-model agreement: statistics of set of images</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="multi-model-agreement-statistics-of-set-of-images">
+<h1>Multi-model agreement: statistics of set of images<a class="headerlink" href="#multi-model-agreement-statistics-of-set-of-images" title="Link to this heading">¶</a></h1>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../../_images/stats_agreement.webp"><img alt="../../_images/stats_agreement.webp" src="../../_images/stats_agreement.webp" style="width: 65%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Percentage success rate for each position in the table, for the three model ensemble. Value in blue is the percentage of values where 2 or more models agree, and that value is correct. Value in red is the percentage of values where 2 or more models agree, but that value is wrong.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+<div class="legend">
+<p>As with the <a class="reference internal" href="plot_stats.html"><span class="doc">single model statistics</span></a>, it will compare statistics from all images for which extracted values are available for all models.</p>
+</div>
+</figcaption>
+</figure>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="c1"># show how well multiple models agree on the digitised values across all the validation cases</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rainfall_rescue.utils.pairs</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_index_list</span><span class="p">,</span> <span class="n">load_pair</span><span class="p">,</span> <span class="n">csv_to_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rainfall_rescue.utils.validate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">load_extracted</span><span class="p">,</span>
+    <span class="n">plot_metadata_fraction_agreement</span><span class="p">,</span>
+    <span class="n">plot_monthly_table_fraction_agreement</span><span class="p">,</span>
+    <span class="n">plot_totals_fraction_agreement</span><span class="p">,</span>
+    <span class="n">models_agree</span><span class="p">,</span>
+    <span class="n">format_value</span><span class="p">,</span>
+    <span class="n">merge_validated_cases</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backends.backend_agg</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureCanvasAgg</span> <span class="k">as</span> <span class="n">FigureCanvas</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--model_ids&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model IDs (comma-separated)&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;google/gemma-3-4b-it,google/gemma-3-12b-it&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--agreement_count&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Min. number of models that must agree&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--purpose&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Training or test or neither&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--fake&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use fake data - not real&quot;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="c1"># Assemble list of model IDs</span>
+<span class="n">model_ids</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">model_ids</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_ids</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least two model IDs are required for agreement plotting.&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Get the list of labels where there are extractions from all the given model_ids</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cases</span><span class="p">(</span><span class="n">model_ids</span><span class="p">,</span> <span class="n">purpose</span><span class="p">,</span> <span class="n">fake</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">training</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">purpose</span><span class="o">.</span><span class="n">lower</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+        <span class="n">training</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">purpose</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+        <span class="n">training</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">get_index_list</span><span class="p">(</span>
+        <span class="n">fake</span><span class="o">=</span><span class="n">fake</span><span class="p">,</span>
+        <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="n">model_ids</span><span class="p">:</span>
+        <span class="n">opdir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PDIR&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/extracted/</span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">opdir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output directory </span><span class="si">{</span><span class="n">opdir</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+        <span class="n">extractions</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">opdir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">extractions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No extractions found for model </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">extractions</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">extractions</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)]</span>
+        <span class="c1"># Filter labels to those that have extractions</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">labels</span> <span class="k">if</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">extractions</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">labels</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">case_agree</span><span class="p">(</span><span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">match</span><span class="p">,</span> <span class="n">exv</span> <span class="o">=</span> <span class="n">models_agree</span><span class="p">(</span><span class="n">extracted</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">agreement_count</span><span class="p">)</span>
+    <span class="n">rrv</span> <span class="o">=</span> <span class="n">format_value</span><span class="p">(</span><span class="n">jcsv</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>  <span class="c1"># Models agree</span>
+        <span class="k">if</span> <span class="n">exv</span> <span class="o">==</span> <span class="n">rrv</span><span class="p">:</span>  <span class="c1"># on the right answer</span>
+            <span class="n">colour</span> <span class="o">=</span> <span class="s2">&quot;blue&quot;</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># on the wrong answer</span>
+            <span class="n">colour</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Models disagree</span>
+        <span class="n">colour</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+    <span class="k">return</span> <span class="n">colour</span>
+
+
+<span class="c1"># find the quality of agreement (blue,grey,red) for each value in one case</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">agreement_for_case</span><span class="p">(</span><span class="n">model_ids</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+
+    <span class="c1"># load the image/data pair</span>
+    <span class="n">img</span><span class="p">,</span> <span class="n">csv</span> <span class="o">=</span> <span class="n">load_pair</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">jcsv</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">csv_to_json</span><span class="p">(</span><span class="n">csv</span><span class="p">))</span>
+
+    <span class="c1"># Load the model extracted data</span>
+    <span class="n">extracted</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="n">model_ids</span><span class="p">:</span>
+        <span class="n">extracted</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">load_extracted</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+
+    <span class="c1"># Check if the extracted data agrees, and matches the CSV data</span>
+    <span class="n">quality</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">case_agree</span><span class="p">(</span>
+            <span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">agreement_count</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">case_agree</span><span class="p">(</span>
+            <span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="s2">&quot;Number&quot;</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">agreement_count</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+    <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Years&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;grey&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span>
+    <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Totals&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;grey&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span>
+    <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="s2">&quot;January&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;February&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;March&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;April&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;May&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;June&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;July&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;August&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;September&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;October&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;November&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;December&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">quality</span><span class="p">[</span><span class="n">month</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;grey&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span>
+    <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Years&quot;</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="n">case_agree</span><span class="p">(</span>
+                <span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="s2">&quot;Years&quot;</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">yr</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">agreement_count</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Years&quot;</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Totals&quot;</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="n">case_agree</span><span class="p">(</span>
+                <span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="s2">&quot;Totals&quot;</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">yr</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">agreement_count</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="n">quality</span><span class="p">[</span><span class="s2">&quot;Totals&quot;</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+        <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="s2">&quot;January&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;February&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;March&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;April&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;May&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;June&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;July&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;August&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;September&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;October&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;November&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;December&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">quality</span><span class="p">[</span><span class="n">month</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="n">case_agree</span><span class="p">(</span>
+                    <span class="n">extracted</span><span class="p">,</span> <span class="n">jcsv</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">yr</span><span class="p">,</span> <span class="n">agreement_count</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">agreement_count</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                <span class="n">quality</span><span class="p">[</span><span class="n">month</span><span class="p">][</span><span class="n">yr</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span>
+
+    <span class="k">return</span> <span class="n">quality</span>
+
+
+<span class="c1"># Find all the cases with extractions available from this model</span>
+<span class="n">cases</span> <span class="o">=</span> <span class="n">get_cases</span><span class="p">(</span><span class="n">model_ids</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">purpose</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">fake</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No cases found for model </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Validate all cases</span>
+<span class="n">merged</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">:</span>
+    <span class="n">case</span> <span class="o">=</span> <span class="n">agreement_for_case</span><span class="p">(</span><span class="n">model_ids</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="n">merge_validated_cases</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">case</span><span class="p">)</span>
+
+
+<span class="c1"># Create the figure</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">Figure</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>  <span class="c1"># Width, Height (inches)</span>
+    <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">facecolor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">subplotpars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">tight_layout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">FigureCanvas</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+
+<span class="c1"># Metadata top right</span>
+<span class="n">ax_metadata</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">])</span>
+<span class="n">plot_metadata_fraction_agreement</span><span class="p">(</span><span class="n">ax_metadata</span><span class="p">,</span> <span class="n">merged</span><span class="p">)</span>
+
+
+<span class="c1"># # Digitised numbers on the right</span>
+<span class="n">ax_digitised</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="mf">0.63</span><span class="p">])</span>
+<span class="n">plot_monthly_table_fraction_agreement</span><span class="p">(</span><span class="n">ax_digitised</span><span class="p">,</span> <span class="n">merged</span><span class="p">)</span>
+
+<span class="c1"># # Totals along the bottom</span>
+<span class="n">ax_totals</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.91</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">])</span>
+<span class="n">plot_totals_fraction_agreement</span><span class="p">(</span><span class="n">ax_totals</span><span class="p">,</span> <span class="n">merged</span><span class="p">)</span>
+
+<span class="c1"># Render</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;stats_agreement.webp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/train.html">Code to train Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../smolvlm/train.html" title="SmolVLM: Train against a sample of images with transcriptions"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_agreement.html" title="Multi-model agreement: single image"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Multi-model agreement: statistics of set of images</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

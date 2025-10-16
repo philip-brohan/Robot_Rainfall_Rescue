@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Prompts used to control the extraction &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Plot image and data extracted by one model" href="../gemma/plot_image%2Bextracted.html" />
+    <link rel="prev" title="SmolVLM: Extract data from a single image" href="extract.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../gemma/plot_image%2Bextracted.html" title="Plot image and data extracted by one model"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="extract.html" title="SmolVLM: Extract data from a single image"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Prompts used to control the extraction</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="prompts-used-to-control-the-extraction">
+<h1>Prompts used to control the extraction<a class="headerlink" href="#prompts-used-to-control-the-extraction" title="Link to this heading">¶</a></h1>
+<p>The same pair of prompts are used for all models.</p>
+<p>By convention, there are two prompts:</p>
+<ol class="arabic simple">
+<li><p>The system prompt, which sets the overall task and context</p></li>
+<li><p>The user prompt, which provides the specific instructions and input data</p></li>
+</ol>
+<p>I’ve done a bit of experimentation with the prompts, but not much. A major challenge is getting the models to output valid JSON in exactly the format specified. There is probably room for improvement with these prompts, but they work well enough.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prompts for SmolVLM to extract rainfall data from tables in historical documents.</span>
+
+<span class="c1"># System prompt</span>
+<span class="n">s_prompt</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;You are a climate scientist. Your task is to extract climate data from pages containing historical observations. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The page you are working on is a record of monthly rainfall from one UK weather station. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;At the top of each page is the name of a weather station, and the number of the station. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The station name will follow the words &#39;RAINFALL at&#39; in the top centre of the page. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The station number will be in the top-right corner of the page. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The page contains a table with monthly rainfall data for ten years,  &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The first row of the table gives the years. There will be 10 years.&quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The first column of the table is the month name, starting with January at the top and December at the bottom. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;The bulk of the table gives values for each calendar month, in each of the ten years. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;Each column is the data for one year, January at the top, December at the bottom. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;There is sometimes an extra column on the right (after the last year) - ignore this column. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;Each row is the data for one calendar month, with the first year on the left and the last year on the right. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;At the bottom of the table is an extra row with totals for each year. &quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;Sometimes some of the data values are missing, left blank. For missing values, return &#39;null&#39;.&quot;</span>
+    <span class="o">+</span> <span class="s2">&quot;Return exactly one JSON object that follows the schema in the user message. Do NOT output any explanation or extra text.&quot;</span>
+<span class="p">)</span>
+
+<span class="n">u_prompt</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Fill the following JSON template. Keep the exact keys and structure.&quot;</span>
+    <span class="s1">&#39; Use strings for numbers and &quot;null&quot; for missing entries.</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+    <span class="s2">&quot;{</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="s1">&#39;  &quot;Name&quot;: &quot;&lt;name&gt;&quot;,</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;Number&quot;: &quot;&lt;number&gt;&quot;,</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;Years&quot;: [&quot;&lt;Y1&gt;&quot;,&quot;&lt;Y2&gt;&quot;,&quot;&lt;Y3&gt;&quot;,&quot;&lt;Y4&gt;&quot;,&quot;&lt;Y5&gt;&quot;,&quot;&lt;Y6&gt;&quot;,&quot;&lt;Y7&gt;&quot;,&quot;&lt;Y8&gt;&quot;,&quot;&lt;Y9&gt;&quot;,&quot;&lt;Y10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;January&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;February&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;March&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;April&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;May&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;June&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;July&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;August&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;September&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;October&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;November&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;December&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;],</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;  &quot;Totals&quot;: [&quot;&lt;v1&gt;&quot;,&quot;&lt;v2&gt;&quot;,&quot;&lt;v3&gt;&quot;,&quot;&lt;v4&gt;&quot;,&quot;&lt;v5&gt;&quot;,&quot;&lt;v6&gt;&quot;,&quot;&lt;v7&gt;&quot;,&quot;&lt;v8&gt;&quot;,&quot;&lt;v9&gt;&quot;,&quot;&lt;v10&gt;&quot;]</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="s2">&quot;}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+    <span class="s2">&quot;Replace placeholders in angle brackets &lt;&gt; with values. &quot;</span>
+    <span class="s2">&quot;Arrays must have 10 entries for Years and months. &quot;</span>
+    <span class="s2">&quot;If a value is missing, put null (without extra text). &quot;</span>
+    <span class="s2">&quot;Output only the JSON object, nothing else.&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/train.html">Code to train Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../gemma/plot_image%2Bextracted.html" title="Plot image and data extracted by one model"
+             >next</a></li>
+        <li class="right" >
+          <a href="extract.html" title="SmolVLM: Extract data from a single image"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Prompts used to control the extraction</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

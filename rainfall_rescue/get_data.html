@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Download the Rainfall Rescue data &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Diagnostic plots for Rainfall Rescue data" href="diagnostics.html" />
+    <link rel="prev" title="Robot Rainfall Rescue" href="../index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="diagnostics.html" title="Diagnostic plots for Rainfall Rescue data"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../index.html" title="Robot Rainfall Rescue"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Download the Rainfall Rescue data</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="download-the-rainfall-rescue-data">
+<h1>Download the Rainfall Rescue data<a class="headerlink" href="#download-the-rainfall-rescue-data" title="Link to this heading">¶</a></h1>
+<p>The images being used are the 10-year rainfall sheets: lose-leaf forms, each recording monthly rainfall at a single UK station over a period of 10-years. The <a class="reference external" href="https://digital.nmla.metoffice.gov.uk/SO_d383374a-91c3-4a7b-ba96-41b81cfb9d67/">collection of these in the UK Meteorological Archive</a> comprises about 65,000 such sheets covering 1677-1960 (though the early years include very few stations).</p>
+<p>A key advantage of these documents is that they were manually digitized in spring 2020 by the <a class="reference external" href="https://www.zooniverse.org/projects/edh/rainfall-rescue">Rainfall Rescue citizen science project</a>, and Ed Hawkins, PI of that project, is sharing the transcriptions through <a class="reference external" href="https://github.com/ed-hawkins/rainfall-rescue">a gitHub repository</a>. So we can get image::transcription pairs from that repository.</p>
+<p>Download the repository:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>#!/bin/bash
+
+# Get Ed Hawkins&#39; Rainfall Rescue github repository
+#  (contains all the images and csv files with transcribed data).
+#  Note - 17Gb zip file, 19Gb unpacked
+
+wget -O $SCRATCH/rainfall-rescue.zip https://github.com/ed-hawkins/rainfall-rescue/archive/master.zip
+unzip -d $SCRATCH $SCRATCH/rainfall-rescue.zip
+
+# Reset all the access times (or $SCRATCH will delete them as too old).
+find $SCRATCH/rainfall-rescue-master -type f -exec touch {} +
+
+# Copy the images from Ed&#39;s GDrive (shared with me).
+rclone copy gdrive:IMAGES --drive-shared-with-me /data/scratch/philip.brohan/rainfall-rescue-master//IMAGES
+</pre></div>
+</div>
+<p>Extract the available image::transcription pairs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="c1"># Get all the error-free jpg::csv pairs from Ed&#39;s Rainfall Rescue dataset</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--ind&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;CSV directory&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/rainfall-rescue-master/DATA/&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--imd&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Image directory&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/rainfall-rescue-master/IMAGES/&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--outd&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output directory&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/Robot_Rainfall_Rescue/from_Ed/&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SCRATCH&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="c1"># Make the output directory (on SCRATCH - lots of Gb of images)</span>
+<span class="k">for</span> <span class="n">subd</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="s2">&quot;csvs&quot;</span><span class="p">):</span>
+    <span class="n">sd</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outd</span><span class="p">,</span> <span class="n">subd</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">sd</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">sd</span><span class="p">)</span>
+
+<span class="c1"># Find all the images</span>
+<span class="n">images</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">imd</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">!=</span> <span class="s2">&quot;.jpg&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">images</span><span class="p">[</span><span class="n">filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]]</span> <span class="o">=</span> <span class="n">dirpath</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">filename</span>
+
+<span class="c1"># Find all the csvs</span>
+<span class="n">csvs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">ind</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">!=</span> <span class="s2">&quot;.csv&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">csvs</span><span class="p">[</span><span class="n">filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]]</span> <span class="o">=</span> <span class="n">dirpath</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">filename</span>
+
+<span class="c1"># For each jpg, if there is a csv with the same name, copy both.</span>
+<span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">image</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">csvs</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No csv for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">image</span><span class="p">)</span>
+        <span class="k">continue</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="n">image</span><span class="p">],</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outd</span><span class="p">,</span> <span class="s2">&quot;images&quot;</span><span class="p">))</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">csvs</span><span class="p">[</span><span class="n">image</span><span class="p">],</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outd</span><span class="p">,</span> <span class="s2">&quot;csvs&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="diagnostics.html" title="Diagnostic plots for Rainfall Rescue data"
+             >next</a></li>
+        <li class="right" >
+          <a href="../index.html" title="Robot Rainfall Rescue"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Download the Rainfall Rescue data</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

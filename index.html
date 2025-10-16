@@ -1,26 +1,24 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>Robot Rainfall Rescue &#8212; Robot Rainfall Rescue</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <script src="_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Getting the Rainfall Rescue data" href="rainfall_rescue_data/index.html" /> 
+    <link rel="next" title="Download the Rainfall Rescue data" href="rainfall_rescue/get_data.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="rainfall_rescue_data/index.html" title="Getting the Rainfall Rescue data"
+          <a href="rainfall_rescue/get_data.html" title="Download the Rainfall Rescue data"
              accesskey="N">next</a></li>
         <li class="nav-item nav-item-0"><a href="#">RRR</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Robot Rainfall Rescue</a></li> 
@@ -32,58 +30,217 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="robot-rainfall-rescue">
-<h1>Robot Rainfall Rescue<a class="headerlink" href="#robot-rainfall-rescue" title="Permalink to this headline">¶</a></h1>
-<p>Can we use Machine Learning to rapidly transcribe vital climate data from paper archives?</p>
-<p>Datasets of historical weather observations are vital to our understanding of climate change and variability, and improving those datasets means transcribing millions of observations - converting paper records into a digital form. Doing such transcription manually is <a class="reference external" href="http://brohan.org/transcription_methods_review/">expensive and slow</a>, and we have a backlog of millions of pages of potentially valuable records which have never been transcribed. We would dearly like a cheap, fast, software tool for extracting weather observations from (photographs of) archived paper documents. No such system currently exists, but recent developments in machine learning methods and image analysis tools suggest that it might now be possible to create one.</p>
-<p>This is an attempt to create such a tool: specifically it is an attempt to use the <a class="reference external" href="https://www.tensorflow.org/">TensorFlow</a> machine learning toolkit to reproduce the work done by 16,000 human volunteers in the <a class="reference external" href="https://www.zooniverse.org/projects/edh/rainfall-rescue">Rainfall Rescue project</a>.</p>
-<hr class="docutils" />
-<p>The requirement is to extract weather observations from document images, producing machine-readable output.</p>
-<div class="figure align-center" id="id1" style="width: 95%">
-<a class="reference internal image-reference" href="_images/The_problem.png"><img alt="_images/The_problem.png" src="_images/The_problem.png" style="width: 95%;" /></a>
-<p class="caption"><span class="caption-text">How can we do this: image to text conversion, 1,000,000 times, quickly and cheaply?</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
-<p>This transcription is easy for humans, but it’s laborious and slow. We need a software solution. Optical Character Recognition (OCR) software does not work well, and is a poor tool for this task in any event - here we need not only to recognise the characters, but to find where on the page the data of interest are, and to preserve the structure of the data table in the output. We also need to cope with variations - even in a single data source, the document images are rarely all exactly the same:</p>
-<div class="figure align-center" style="width: 95%">
-<a class="reference internal image-reference" href="_images/Variations1.png"><img alt="_images/Variations1.png" src="_images/Variations1.png" style="width: 95%;" /></a>
-</div>
-<p>So we need to create software that is powerful enough to find the grid and transcribe the digits from each image, flexible enough to cope with the many slightly-different image formats and colours, and adaptable enough that it can be re-purposed to transcribe records from other document types with different formats.</p>
-<p>This is a staggeringly difficult task, but deep-learning methods have demonstrated remarkable capability on other difficult tasks in the general field of image analysis, can we use deep-learning for transcription?</p>
-<hr class="docutils" />
-<p>We’re trying to come up with a general method. So we want a test dataset to work on that’s fairly typical - neither too easy nor to difficult. We need a dataset where the answers are already available - so we can easily test to see how well the transcription tool is working. I’ve chosen the 10-year rainfall sheets: lose-leaf forms, each recording monthly rainfall at a single UK station over a period of 10-years. The <a class="reference external" href="https://digital.nmla.metoffice.gov.uk/SO_d383374a-91c3-4a7b-ba96-41b81cfb9d67/">collection of these in the UK Meteorological Archive</a> comprises about 65,000 such sheets covering 1677-1960 (though the early years include very few stations). These were manually digitised in spring 2020 by the <a class="reference external" href="https://www.zooniverse.org/projects/edh/rainfall-rescue">Rainfall Rescue citizen science project</a>, so both the document images, and the transcriptions, are readily available.</p>
+  <section id="robot-rainfall-rescue">
+<h1>Robot Rainfall Rescue<a class="headerlink" href="#robot-rainfall-rescue" title="Link to this heading">¶</a></h1>
+<p>The <a class="reference external" href="https://climatelabbook.substack.com/p/rainfall-rescue-5-years-on">Rainfall Rescue project</a> used contributions from 16,000 volunteers to rescue more than 5 million historical weather observations from paper records. The project was a great success, but it’s proved hard to replicate and scale up - recruiting and managing volunteer contributions at scale is very challenging. So we’d like to <a class="reference external" href="https://brohan.org/AI_daily_precip/">do data rescue with Artificial Intelligence (AI)</a>, instead of using volunteers, to get a process we can run at scale, and on demand.</p>
+<p>Here I show that we can replicate the success of Rainfall Rescue using a few small <a class="reference external" href="https://huggingface.co/blog/vlms">Vision Language Models (VLMs)</a> instead of thousands of human volunteers. After fine-tuneing on 1000 images (1.5% of the full dataset), each VLM can recover about 95% of the rainfall records correctly. Using an ensemble of three fine-tuned VLMs, and requiring agreement between at least two models, we can recover about 98% of the records correctly. This is a similar accuracy rate to that achieved with human volunteers, and not only allows us to save the time of all the volunteers, but also the time of the project team in recruiting, training, and managing the project.</p>
+<section id="the-problem">
+<h2>The problem<a class="headerlink" href="#the-problem" title="Link to this heading">¶</a></h2>
+<p>We aim to rescue the monthly station rainfall records in the <a class="reference external" href="https://digital.nmla.metoffice.gov.uk/SO_d383374a-91c3-4a7b-ba96-41b81cfb9d67/">UK 10-year rainfall sheets</a>. Each sheet contains the monthly rainfall totals for a single station, for 10 years. Despite their overall similarity, there is enough variation between the sheets that a fully automated approach is challenging. Here are three sample images:</p>
+<figure class="align-center" id="id4" style="width: 95%">
+<a class="reference internal image-reference" href="_images/Image_samples.jpg"><img alt="_images/Image_samples.jpg" src="_images/Image_samples.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Three sample images showing monthly average rainfall observations. Each image contains the data from one station for 10 years.</span><a class="headerlink" href="#id4" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>We have 66,000 JPEG images, success means converting each image into a table of numbers that can be ingested into a database. In practice I’m converting each image into structured text - a JSON file. The point of the project is not to rescue the data (that’s already been done) but to demonstrate that we can do the rescue using AI. Having the data already rescued allows us to test how well the AI is doing, by comparing the AI results with the known values. It also allows us to train the AI, by showing it some images with known values, and asking it to learn how to extract the values from the images.</p>
+<p>The first step is to get the sheet images, and the known values, from the original Rainfall Rescue project:</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/image.html">Image utilities</a></li>
 </ul>
 </div>
-<hr class="docutils" />
-<p>The software we need is a program that takes an image as input, and generates a table of transcribed numbers (observations) as output. <a class="reference external" href="https://en.wikipedia.org/wiki/Machine_learning">Machine Learning (ML)</a> is a process for automatically generating programs from paired examples of input and output. So as we have both images (input) and transcriptions (output) for the 10-year-rainfall dataset, we could directly train an ML model to do the transcription.</p>
-<p>But this isn’t quite what we want, because it requires us to already have the transcriptions to generate the model, and in general we need the model first to produce the transcriptions: We need to learn a transcription model despite not having any transcribed outputs to train on. The process for this is <a class="reference external" href="https://en.wikipedia.org/wiki/Transfer_learning">Transfer Learning</a> - we train our transcription model on a different, but related set of image::transcription pairs that we already have, and then apply that same model to transcribe the images we are interested in. We don’t have a set of very similar image::transcription pairs to do the training on, but we can make them.</p>
-<p>So instead of writing software to convert images to transcriptions (<em>very</em> hard), we write software to make images from transcriptions (much easier), use this to make a big dataset of transcription::image pairs, and then use this dataset to train an ML system to invert the process - to make transcriptions from images.</p>
+</section>
+<section id="meet-the-team">
+<h2>Meet the team<a class="headerlink" href="#meet-the-team" title="Link to this heading">¶</a></h2>
+<p>To convert images into JSON, we need an AI that can take images and text instructions as input, and produce text as output - a <a class="reference external" href="https://huggingface.co/blog/vlms">Vision Language Model (VLM)</a>. There are already many such models to choose from. We are not using the well-known flagship AI models like <a class="reference external" href="https://chatgpt.com/">ChatGPT</a> or <a class="reference external" href="https://gemini.google.com/app">Gemini</a> because they are too difficult to fine-tune. Instead we are using smaller, open-weight models that can be run on a single (<a class="reference external" href="https://www.nvidia.com/en-gb/data-center/h100/">H100</a>) GPU. I picked three small VLMs arbitrarily from those available on <a class="reference external" href="https://huggingface.co/">Huggingface</a>:</p>
+<figure class="align-center" id="id5" style="width: 95%">
+<a class="reference internal image-reference" href="_images/smolvlm_granite_gemma.png"><img alt="_images/smolvlm_granite_gemma.png" src="_images/smolvlm_granite_gemma.png" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Three small VLMs, <a class="reference external" href="https://huggingface.co/blog/smolvlm">SmolVLM</a>, <a class="reference external" href="https://www.ibm.com/granite">Granite</a>, and <a class="reference external" href="https://deepmind.google/models/gemma/gemma-3/">Gemma</a>. Note that these depictions are not official images from the model developers, but <a class="reference external" href="https://chatgpt.com/share/68b5a6ff-fc00-8013-b62f-2c4032700aa6">anthropomorphic representations created by our artist</a>.</span><a class="headerlink" href="#id5" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p><a class="reference external" href="https://huggingface.co/">Huggingface</a> has been invaluable to this project, not only providing access to the models, but also the tools to run and fine-tune them (<a class="reference external" href="https://huggingface.co/docs/transformers/en/index">transformers</a>), and documentation and example code.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/hf.html">Huggingface interface functions</a></li>
 </ul>
 </div>
-<hr class="docutils" />
-<p>We now have a transfer dataset for training, and a real dataset for validation. So all we need to do is design an ML model architecture that is powerful enough to do the transcription, train the model on the transfer dataset, deploy the trained model on the real (validation) dataset, and verify that it works.</p>
-<p>Unfortunately it’s not clear <a class="reference external" href="https://en.wikipedia.org/wiki/Model_selection">how to select the right model</a>, or what <a class="reference external" href="https://en.wikipedia.org/wiki/Hyperparameter_(machine_learning)">hyperparameters</a> to use in its training. So we are going to have to do some experiments - training a series of different models, on simplified problems, to find out what works.</p>
+</section>
+<section id="a-single-small-vlm-smolvlm">
+<h2>A single small VLM: SmolVLM<a class="headerlink" href="#a-single-small-vlm-smolvlm" title="Link to this heading">¶</a></h2>
+<p>We start with a single model, <a class="reference external" href="https://huggingface.co/blog/smolvlm">SmolVLM</a>, which is a relatively small (2 billion parameter) open-weight model, designed to run on a single GPU (needs only 5Gb GPU RAM). We start by using the model out of the box, with no fine-tuning. The model is given an image, and a prompt asking it to extract the values from the table in the image.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models/deep_convolutional_transcriber/index.html">A deep convolutional transcriber</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models/tuned_convolutional_transcriber/index.html">A tuned convolutional transcriber</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models/find_grid/index.html">Finding data locations directly</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models/find_corners/index.html">Finding grid_corners</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
 </ul>
 </div>
-<hr class="docutils" />
-<p>This project uses only open-source software and publicly-available data. It should be easy to replicate and improve upon. Can you train a better transcriber? Or do you want to try this method on a different image collection? If so, <strong>please do</strong>.</p>
+<p>The model does have some skill, but is far from perfect. Here are example results on a single image:</p>
+<figure class="align-center" id="id6" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_raw_easy.jpg"><img alt="_images/SmolVLM_raw_easy.jpg" src="_images/SmolVLM_raw_easy.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">SmolVLM performance on a single image. Text in black is where the model is correct, in red shows where it is wrong (and where it is wrong, the correct value is given underneath in blue). This is a relatively easy example, with no missing data.</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>So it’s promising at the start of the image (top left), but degrades as it goes on, and makes a lot of mistakes by the end of the image (bottom right). And that was an easy image - here is a more challenging example, with some missing data:</p>
+<figure class="align-center" id="id7" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_raw_hard.jpg"><img alt="_images/SmolVLM_raw_hard.jpg" src="_images/SmolVLM_raw_hard.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">SmolVLM performance on a single image. Text in black is where the model is correct, in red shows where it is wrong (and where it is wrong, the correct value is given underneath in blue). This is a challenging example, with missing data.</span><a class="headerlink" href="#id7" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>And we can generate statistics for its overall skill, by running it on a set of 100 images, and computing the percentage success for each position in the data table.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+</div>
+<figure class="align-center" id="id8" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_raw_stats.jpg"><img alt="_images/SmolVLM_raw_stats.jpg" src="_images/SmolVLM_raw_stats.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">SmolVLM percentage success rate for each position in the table.</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>This is clearly nowhere near good enough - human volunteers would be about 97% accurate for each entry, and we are aiming to match that. So what can we do to improve the results?</p>
+</section>
+<section id="an-ensemble-of-vlms">
+<h2>An ensemble of VLMs<a class="headerlink" href="#an-ensemble-of-vlms" title="Link to this heading">¶</a></h2>
+<p>If your model has some skill, but not enough, try some other models. We can do exactly the same analysis with two other small open-weight VLMs, <a class="reference external" href="https://deepmind.google/models/gemma/gemma-3/">Google’s Gemma</a> and <a class="reference external" href="https://www.ibm.com/granite">IBM’s Granite</a>:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+</div>
+<p>Gemma and Granite have the same fundamental issues as SmolVLM, each is better in some respects, but none is good enough to use alone. But what if we combine them? An ensemble of models often outperforms any individual model - the ensemble mean is an improved best estimate, and the ensemble spread is a useful measure of uncertainty. We won’t do exactly that here, because we are looking for categorical values (the numbers in the table), so we don’t want a mean, but we can look for agreement between models. What if we look for cases where two or more models agree on a value?</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+</div>
+<figure class="align-center" id="id9" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_Granite_Gemma_raw_example.jpg"><img alt="_images/SmolVLM_Granite_Gemma_raw_example.jpg" src="_images/SmolVLM_Granite_Gemma_raw_example.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Example results from the three-model ensemble (untrained). Values in blue show where 2 or more models agree on a value, and that value is correct. Values in red show where 2 or more models agree on a value, but that value is wrong. Values in grey show where there is no agreement among the models.</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>This is encouraging - for the rainfall data entries, about half the time we have multi-model agreement, and when we do, they are always right - the process is not overconfident. But that is just one image (and an easy one with no missing data). We can repeat the process over a set of 100 images (as before), and generate statistics:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+</div>
+<figure class="align-center" id="id10" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_Granite_Gemma_raw_stats.jpg"><img alt="_images/SmolVLM_Granite_Gemma_raw_stats.jpg" src="_images/SmolVLM_Granite_Gemma_raw_stats.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Percentage success rate for each position in the table, for the three model ensemble. Value in blue is the percentage of values where 2 or more models agree, and that value is correct. Value in red is the percentage of values where 2 or more models agree, but that value is wrong.</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>The ensemble of untrained models successfully recovers about half of the rainfall values. This would be great - 50% of the data is a great deal better than nothing - but unfortunately, the process is somewhat overconfident - about 5-10% of the time 2 or more models agree on an incorrect value (there’s some kind of common-mode failure between the models). We need to reduce the false success rate, and increase the overall success rate. It’s time to do some fine-tuneing.</p>
+</section>
+<section id="training-the-models">
+<h2>Training the models<a class="headerlink" href="#training-the-models" title="Link to this heading">¶</a></h2>
+<p>Let’s divide our problem set of 66,000 images into two groups: a training set of 1000 images (1.5% of the total), and a test set of 65,000 images (the remaining 98.5%). We will use the training set to fine-tune the models, and then test the results on the test set. The cost of this is that we have to transcribe the values in the training set by some other process - probably manual data entry, possibly with human volunteers. But 1000 images is a lot less work than 66,000 images, we’re still planning to do 98.5% of the work with AI.</p>
+<p>And, of course, because we are working with images with known values, we can go straight to the training. Let’s start with SmolVLM:</p>
+<figure class="align-center" id="id11" style="width: 95%">
+<a class="reference internal image-reference" href="_images/Train_SmolVLM.jpg"><img alt="_images/Train_SmolVLM.jpg" src="_images/Train_SmolVLM.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Training SmolVLM. The model is fine-tuned using a set of 1000 images with known values. The training process (12 epochs) takes about 3 hours on a single 80Gb H100 GPU.</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+</div>
+<p>Because we are working with a small model, and a small training set, the fine-tuning is quick and easy - the cost is negligible. And we can see how well it works by comparing the output of the trained model, with that of the untrained model, on a sample image from the test set:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+</div>
+<p>This works very well - a single image shows very promising:</p>
+<figure class="align-center" id="id12" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_raw_v_trained_example.jpg"><img alt="_images/SmolVLM_raw_v_trained_example.jpg" src="_images/SmolVLM_raw_v_trained_example.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Example results from SmolVLM. Original in the centre, after training on the right. Text in black is where the model is correct, in red shows where it is wrong (and where it is wrong, the correct value is given underneath in blue).</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>And we can generate statistics for the trained model in exactly the same way as for the untrained model, by running it on a set of 100 images, and computing the percentage success for each position in the data table.</p>
+<figure class="align-center" id="id13" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_trained_stats.jpg"><img alt="_images/SmolVLM_trained_stats.jpg" src="_images/SmolVLM_trained_stats.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">SmolVLM percentage success rate for each position in the table. After training.</span><a class="headerlink" href="#id13" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Trained SmolVLM is not quite as good as a human volunteer, but it’s close - consistently getting more than 90% of rainfall values right. That’s still not quite good enough on its own, but what if we do the same training on the other two models, and then use the ensemble approach again?</p>
+</section>
+<section id="an-ensemble-of-trained-models">
+<h2>An ensemble of trained models<a class="headerlink" href="#an-ensemble-of-trained-models" title="Link to this heading">¶</a></h2>
+<figure class="align-center" id="id14" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_Granite_Gemma_trained.jpg"><img alt="_images/SmolVLM_Granite_Gemma_trained.jpg" src="_images/SmolVLM_Granite_Gemma_trained.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">We can do the same fine-tuneing, on the same training set, on all three models.</span><a class="headerlink" href="#id14" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/train.html">Code to train Granite</a></li>
+</ul>
+</div>
+<p>Gemma and Granite are bigger models, so the training takes longer (about 12 hours on a single 80Gb H100 GPU), but the cost is still tiny. And we can look at the output of the trained ensemble, exactly as we did with the untrained ensemble above, first on a single test image:</p>
+<figure class="align-center" id="id15" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_Granite_Gemma_trained_example.jpg"><img alt="_images/SmolVLM_Granite_Gemma_trained_example.jpg" src="_images/SmolVLM_Granite_Gemma_trained_example.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Example results from the three-model ensemble after training. Values in blue show where two or more models agree on a value, and that value is correct. Values in red show where two or more models agree on a value, but that value is wrong. Values in grey show where there is no agreement among the models.</span><a class="headerlink" href="#id15" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-center" id="id16" style="width: 95%">
+<a class="reference internal image-reference" href="_images/SmolVLM_Granite_Gemma_trained_stats.jpg"><img alt="_images/SmolVLM_Granite_Gemma_trained_stats.jpg" src="_images/SmolVLM_Granite_Gemma_trained_stats.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Percentage success rate for each position in the table, for the three model ensemble after training. Value in blue is the percentage of values where two or more models agree, and that value is correct. Value in red is the percentage of values where two or more models agree, but that value is wrong.</span><a class="headerlink" href="#id16" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>This works <em>very</em> well - the trained ensemble is not perfect, but it is very good - consistently in the high nineties and the false success rate is down to about 1%. This is comparable to the performance of citizen scientists, but without the need to recruit, train, and manage thousands of volunteers.</p>
+<p>In an ideal world, we’d get the success rate up to 100%, and the false success rate down to 0. And with more training, or a larger set of VLMs, or better prompts, we could get closer to that. But it’s probably not worth it - even with perfect transcription the recovered rainfall values would still contain errors, because the original observations contain errors - realistically, this is already good enough.</p>
+</section>
+<section id="conclusions">
+<h2>Conclusions<a class="headerlink" href="#conclusions" title="Link to this heading">¶</a></h2>
+<p>An ensemble of three small VLMs, fine-tuned on a training set of 1000 images, can recover about 98% of the rainfall values correctly, with a false success rate of about 1%. There is no need for any task-specific processing - the AIs can do 100% of the job.</p>
+<figure class="align-center" style="width: 95%">
+<a class="reference internal image-reference" href="_images/trained_celebrating.png"><img alt="_images/trained_celebrating.png" src="_images/trained_celebrating.png" style="width: 95%;" />
+</a>
+</figure>
+<p>This approach is cheap and easy and effective. The next step is to use it in anger - to apply it to a <a class="reference external" href="https://digital.nmla.metoffice.gov.uk/index.php?name=SO_9903efdf-7f99-4cae-a723-8b3f426eea20">large set of images that have *not* yet been rescued</a>.</p>
+<p>My other main takeaway from this project is that I’m too <a class="reference external" href="https://www.urbandictionary.com/define.php?term=square">square</a>. I was very slow to appreciate <a class="reference external" href="https://huggingface.co/">Huggingface</a> - how can you take seriously a web-site named after an emoji (🤗)? And I was slow to internalize the <a class="reference external" href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html">bitter lesson</a> - don’t try and impose your own structure on the problem, just deploy generic AI and let it learn. Use pre-trained general-purpose AIs and use them on as much of the problem as possible.</p>
+<figure class="align-center" id="id17" style="width: 95%">
+<a class="reference internal image-reference" href="_images/T_shirt.jpg"><img alt="_images/T_shirt.jpg" src="_images/T_shirt.jpg" style="width: 95%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Be willing to try something new - AIs may seem a bit strange, but still be very powerful</span><a class="headerlink" href="#id17" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
@@ -91,28 +248,58 @@
 </ul>
 </div>
 <p>This document is distributed under the terms of the <a class="reference external" href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/">Open Government Licence</a>. Source code included is distributed under the terms of the <a class="reference external" href="https://opensource.org/licenses/BSD-2-Clause">BSD licence</a>.</p>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="#">
-              <img class="logo" src="_static/RRR_logo.png" alt="Logo"/>
+              <img class="logo" src="_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
             </a></p>
 <h3><a href="#">Table Of Contents</a></h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/image.html">Image utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/hf.html">Huggingface interface functions</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/train.html">Code to train Granite</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
@@ -134,11 +321,11 @@ Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/ne
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="rainfall_rescue_data/index.html" title="Getting the Rainfall Rescue data"
+          <a href="rainfall_rescue/get_data.html" title="Download the Rainfall Rescue data"
              >next</a></li>
         <li class="nav-item nav-item-0"><a href="#">RRR</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Robot Rainfall Rescue</a></li> 

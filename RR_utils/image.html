@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Image processing functions for the Rainfall Rescue images &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Huggingface interface functions" href="hf.html" />
+    <link rel="prev" title="Utility functions for Rainfall Rescue data" href="../rainfall_rescue/utilities.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="hf.html" title="Huggingface interface functions"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../rainfall_rescue/utilities.html" title="Utility functions for Rainfall Rescue data"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Image processing functions for the Rainfall Rescue images</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="image-processing-functions-for-the-rainfall-rescue-images">
+<h1>Image processing functions for the Rainfall Rescue images<a class="headerlink" href="#image-processing-functions-for-the-rainfall-rescue-images" title="Link to this heading">¶</a></h1>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Functions to cut up images (for tokenization) and to stitch them together again</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="c1"># Cut an image into square blocks of a specified size</span>
+<span class="c1">#  With padding where necessary.</span>
+<span class="c1"># def cut_image(image, block_size):</span>
+<span class="c1">#     width, height = image.size</span>
+<span class="c1">#     blocks = []</span>
+
+<span class="c1">#     # Calculate the number of blocks in each dimension</span>
+<span class="c1">#     num_blocks_x = (width + block_size - 1) // block_size</span>
+<span class="c1">#     num_blocks_y = (height + block_size - 1) // block_size</span>
+
+<span class="c1">#     # Create blocks with padding if necessary</span>
+<span class="c1">#     for i in range(num_blocks_y):</span>
+<span class="c1">#         for j in range(num_blocks_x):</span>
+<span class="c1">#             left = j * block_size</span>
+<span class="c1">#             upper = i * block_size</span>
+<span class="c1">#             right = min(left + block_size, width)</span>
+<span class="c1">#             lower = min(upper + block_size, height)</span>
+
+<span class="c1">#             # Create a new image for the block</span>
+<span class="c1">#             cropped = image.crop((left, upper, right, lower))</span>
+<span class="c1">#             # If the block is smaller than the specified size, pad it</span>
+<span class="c1">#             if cropped.width &lt; block_size or cropped.height &lt; block_size:</span>
+<span class="c1">#                 block = Image.new(</span>
+<span class="c1">#                     image.mode, (block_size, block_size), color=&quot;white&quot;</span>
+<span class="c1">#                 )  # White padding</span>
+<span class="c1">#                 block.paste(cropped, (0, 0))</span>
+<span class="c1">#             else:</span>
+<span class="c1">#                 block = cropped</span>
+
+<span class="c1">#             blocks.append(block)</span>
+
+<span class="c1">#     return blocks</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cut an image into square blocks of a specified size with adjustable overlap.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image (PIL.Image): The input image.</span>
+<span class="sd">        block_size (int): The size of each block (in pixels).</span>
+<span class="sd">        overlap (float): Fraction of block size to overlap between blocks (0.0 to 1.0).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List of image blocks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Calculate the step size based on overlap</span>
+    <span class="n">step_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">block_size</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">overlap</span><span class="p">))</span>
+
+    <span class="c1"># Create blocks with padding if necessary</span>
+    <span class="k">for</span> <span class="n">upper</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">step_size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">left</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">step_size</span><span class="p">):</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">left</span> <span class="o">+</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">upper</span> <span class="o">+</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+            <span class="c1"># Create a new image for the block</span>
+            <span class="n">cropped</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">crop</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">lower</span><span class="p">))</span>
+            <span class="c1"># If the block is smaller than the specified size, pad it</span>
+            <span class="k">if</span> <span class="n">cropped</span><span class="o">.</span><span class="n">width</span> <span class="o">&lt;</span> <span class="n">block_size</span> <span class="ow">or</span> <span class="n">cropped</span><span class="o">.</span><span class="n">height</span> <span class="o">&lt;</span> <span class="n">block_size</span><span class="p">:</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+                    <span class="n">image</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="p">(</span><span class="n">block_size</span><span class="p">,</span> <span class="n">block_size</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span>
+                <span class="p">)</span>  <span class="c1"># White padding</span>
+                <span class="n">block</span><span class="o">.</span><span class="n">paste</span><span class="p">(</span><span class="n">cropped</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">cropped</span>
+
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">blocks</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="hf.html" title="Huggingface interface functions"
+             >next</a></li>
+        <li class="right" >
+          <a href="../rainfall_rescue/utilities.html" title="Utility functions for Rainfall Rescue data"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Image processing functions for the Rainfall Rescue images</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

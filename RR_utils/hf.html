@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Huggingface interface functions &#8212; Robot Rainfall Rescue</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SmolVLM: Extract data from a single image" href="../models/smolvlm/extract.html" />
+    <link rel="prev" title="Image processing functions for the Rainfall Rescue images" href="image.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../models/smolvlm/extract.html" title="SmolVLM: Extract data from a single image"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="image.html" title="Image processing functions for the Rainfall Rescue images"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Huggingface interface functions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="huggingface-interface-functions">
+<h1>Huggingface interface functions<a class="headerlink" href="#huggingface-interface-functions" title="Link to this heading">¶</a></h1>
+<p>Some scripts download models from Huggingface, so they will need to login first. This library file contains a function to do that.
+Logging in requires an API key which you can get from the Huggingface web-site when you create an account there.
+Store that api key in file <code class="docutils literal notranslate"><span class="pre">`~/.huggingface_api`</span></code> and you can use the <code class="docutils literal notranslate"><span class="pre">`HFLogin()`</span></code> function in this library to connect.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Utility functions for interacting with huggingface</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">login</span>
+
+
+<span class="c1"># Get the Huggingface API key - either file or environment variable</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">HFlogin</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Login to Huggingface using the API key.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;HF_KEY&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">hf_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HF_KEY&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If not found in environment variable, look for file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/.huggingface_api&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HOME&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">hf_key</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Huggingface API key not found.&quot;</span><span class="p">)</span>
+    <span class="n">login</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">hf_key</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image.html">Image utilities</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../models/gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/granite/train.html">Code to train Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to.html">How to reproduce or extend this work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Authors and acknowledgements</a></li>
+</ul>
+<h3><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue">Get the code</a></h3>
+
+<ul>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue"
+           rel="nofollow">Github repository</a></li>
+<li><a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/archive/master.zip"
+           rel="nofollow">Zip file</a></li>
+</ul>
+
+<h3>Found a bug, or have a suggestion?</h3>
+
+Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/new">raise an issue</a><br>or <a href="mailto://philip.brohan@metoffice.gov.uk">contact Philip</a>.
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../models/smolvlm/extract.html" title="SmolVLM: Extract data from a single image"
+             >next</a></li>
+        <li class="right" >
+          <a href="image.html" title="Image processing functions for the Rainfall Rescue images"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">RRR</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Huggingface interface functions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

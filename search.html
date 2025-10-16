@@ -1,26 +1,25 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Search &#8212; Robot Rainfall Rescue</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
     
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
+    <script src="_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
     <link rel="search" title="Search" href="#" />
-  <script src="searchindex.js" defer></script>
-   
+    <script src="searchindex.js" defer="defer"></script>
+    <meta name="robots" content="noindex" />
+     
 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
@@ -34,46 +33,81 @@
           <div class="body" role="main">
             
   <h1 id="search-documentation">Search</h1>
-  <div id="fallback" class="admonition warning">
-  <script>$('#fallback').hide();</script>
+  
+  <noscript>
+  <div class="admonition warning">
   <p>
     Please activate JavaScript to enable the search
     functionality.
   </p>
   </div>
+  </noscript>
+  
+  
   <p>
     Searching for multiple words only shows matches that contain
     all words.
   </p>
+  
+  
   <form action="" method="get">
-    <input type="text" name="q" aria-labelledby="search-documentation" value="" />
+    <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
     <input type="submit" value="search" />
     <span id="search-progress" style="padding-left: 10px"></span>
   </form>
   
-  <div id="search-results">
   
-  </div>
+  <div id="search-results"></div>
+  
 
             <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/RRR_logo.png" alt="Logo"/>
+              <img class="logo" src="_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
             </a></p>
 <h3><a href="index.html">Table Of Contents</a></h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue_data/index.html">Getting the images to transcribe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/image.html">Image utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="training_data/itp.html">Preparing a transfer dataset for training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/hf.html">Huggingface interface functions</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="models/atb2.html">Direct transcription of the simplified training dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models/layout.html">Modelling the page layout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/train.html">Code to train Granite</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="how_to.html">How to reproduce or extend this work</a></li>
@@ -95,7 +129,7 @@ Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/ne
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
