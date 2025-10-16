@@ -13,7 +13,8 @@ All blame should go to the maintainer; credit is more widely distributed - all t
 * Compute provided by MS Azure, funded by the Met Office Supercomputing program.
 * `Illustrations by ChatGPT <https://chatgpt.com/share/68b5a6ff-fc00-8013-b62f-2c4032700aa6>`_.
 * Programing help from `Github Copilot <https://github.com/features/copilot>`_.
-* Uses models, software, and examples from `Hugging Face <https://huggingface.co>`_, * Models used:
+* Uses models, software, and examples from `Hugging Face <https://huggingface.co>`_,
+* Models used:
   - `SmolVLM <https://huggingface.co/blog/smolvlm>`_
   - `Granite <https://www.ibm.com/granite>`_,
   - `Gemma <https://deepmind.google/models/gemma/gemma-3/>`_.
