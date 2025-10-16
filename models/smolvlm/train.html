@@ -12,14 +12,14 @@
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="How to reproduce and extend this work" href="../../how_to.html" />
+    <link rel="next" title="Plot image and compare data extracted by two models" href="../gemma/plot_image%2Bcomparison.html" />
     <link rel="prev" title="Multi-model agreement: statistics of set of images" href="../gemma/plot_stats_agreement.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../../how_to.html" title="How to reproduce and extend this work"
+          <a href="../gemma/plot_image%2Bcomparison.html" title="Plot image and compare data extracted by two models"
              accesskey="N">next</a></li>
         <li class="right" >
           <a href="../gemma/plot_stats_agreement.html" title="Multi-model agreement: statistics of set of images"
@@ -36,6 +36,15 @@
             
   <section id="smolvlm-train-against-a-sample-of-images-with-transcriptions">
 <h1>SmolVLM: Train against a sample of images with transcriptions<a class="headerlink" href="#smolvlm-train-against-a-sample-of-images-with-transcriptions" title="Link to this heading">¶</a></h1>
+<p>Fine tunes SmolVLM against a sample of images with transcriptions.</p>
+<ul class="simple">
+<li><p>–model_id specifies the start model. Must be HuggingFaceTB/SmolVLM-Instruct or a fine-tuned derivative</p></li>
+<li><p>–run_id gives the name of the resulting model after fine-tuneing</p></li>
+<li><p>–nmax is the number of images to use in training. This number will be taken from the training set at random</p></li>
+<li><p>–random_seed is the random seed to use when picking images. Let’s you specify the same set of images again</p></li>
+<li><p>–epochs is the number of epochs to train for. More epochs will take longer but may give better results</p></li>
+</ul>
+<p>Many more parameters are specified in the script.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
 
 <span class="c1"># SmolVLM model training script adapted for RRR</span>
@@ -405,26 +414,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../RR_utils/hf.html">Huggingface interface functions</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="extract.html">Use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extract.html">Code to use SmolVLM to extract data from a single image</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prompts.html">Prompts used to control the extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bextracted.html">Plot the results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="extract_multi.html">Run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extract_multi.html">Code to run SmolVLM on a set of images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats.html">Plot percentage success rate</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../gemma/gemma.html">Google Gemma-3-4b</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../granite/granite.html">IBM Granite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_agreement.html">Plot multi-model results compared with a sample image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats_agreement.html">Plot multi-model statistics over a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Train SmolVLM</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../granite/train.html">Code to train Granite</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../how_to.html">How to reproduce or extend this work</a></li>
@@ -450,7 +467,7 @@ Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/ne
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../../how_to.html" title="How to reproduce and extend this work"
+          <a href="../gemma/plot_image%2Bcomparison.html" title="Plot image and compare data extracted by two models"
              >next</a></li>
         <li class="right" >
           <a href="../gemma/plot_stats_agreement.html" title="Multi-model agreement: statistics of set of images"
