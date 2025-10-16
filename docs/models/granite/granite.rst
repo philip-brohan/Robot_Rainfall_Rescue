@@ -1,5 +1,10 @@
 Granite run alone
-====================
+=================
+
+We can do exactly the same with Granite as :doc:`we did with SmolVLM <../../index>`.
+
+The code is mostly the same (just change the ```---model``` argument), but the scripts to run Granite are slightly different.
+
 
 .. toctree::
    :maxdepth: 1

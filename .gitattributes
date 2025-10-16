@@ -1,0 +1,6 @@
+# Normalize all text files and store normalized LF in repo
+* text=auto
+
+# Ensure shell scripts and python use LF on checkout
+*.sh text eol=lf
+*.py text eol=lf
