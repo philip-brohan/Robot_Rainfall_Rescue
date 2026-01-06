@@ -29,6 +29,7 @@ dependencies:
       - sentencepiece
       - datasets==3.3.2
       - flash-attention
+      - num2words
       - tensorboardX
       - ipdb>=0.13.13
       - einx==0.1.3

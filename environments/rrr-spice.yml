@@ -11,6 +11,10 @@ dependencies:
   - huggingface_hub>=0.33
   - transformers>=4.51.3
 #  - diffusers>=0.35.0
+# Gemini API
+  - google-generativeai=0.8.5
+  - grpcio # Don't use this, but it's required by google-generativeai
+
   
 # Download images from Google Drive
   - rclone=1.69
@@ -38,6 +42,7 @@ dependencies:
       - protobuf
       - sentencepiece
       - flash-attention
+      - num2words
       - datasets==3.3.2
       - tensorboardX
       - tensorboard
@@ -54,6 +59,7 @@ variables:
 
 # Project data path
   PDIR: /data/scratch/philip.brohan/Robot_Rainfall_Rescue
+  DOCS: /data/scratch/philip.brohan/documents
 
 # Tell huggingface where to store model weights
   HF_HOME: /data/users/philip.brohan/huggingface
