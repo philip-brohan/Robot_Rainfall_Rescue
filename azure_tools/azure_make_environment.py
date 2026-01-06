@@ -31,7 +31,7 @@ bindir = os.path.abspath(os.path.dirname(__file__))
 env_docker_conda = Environment(
     image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04",
     conda_file="%s/../environments/rrr-azure.yml" % bindir,
-    name="RRR-Azure",
+    name="RRR-Azure-2",
     description="Robot Rainfall Rescue environment",
 )
 

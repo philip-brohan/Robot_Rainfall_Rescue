@@ -92,7 +92,7 @@ command_job = command(
     name=args.name,
     experiment_name=args.experiment,
     compute=args.compute,
-    environment="RRR-Azure@latest",
+    environment="RRR-Azure-2@latest",
     code="/home/users/philip.brohan/Projects/Robot_Rainfall_Rescue",
     outputs={
         "PDIR": Output(
@@ -123,10 +123,25 @@ command_job = command(
             ),
             mode=InputOutputModes.RW_MOUNT,
         ),
+        "DOCS": Output(
+            type=AssetTypes.URI_FOLDER,
+            path=(
+                "azureml://subscriptions/%s/"
+                + "resourcegroups/%s/workspaces/%s/"
+                + "datastores/large_datastore/paths/documents/"
+            )
+            % (
+                os.getenv("AZML_SUBSCRIPTION_ID"),
+                os.getenv("AZML_RESOURCE_GROUP"),
+                os.getenv("AZML_WORKSPACE_NAME"),
+            ),
+            mode=InputOutputModes.RW_MOUNT,
+        ),
     },
     environment_variables={
         "PDIR": "${{outputs.PDIR}}",
         "HF_HOME": "${{outputs.HF_HOME}}",
+        "DOCS": "${{outputs.DOCS}}",
         "HF_KEY": hf_key,
         "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
     },
