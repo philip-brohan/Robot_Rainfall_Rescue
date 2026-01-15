@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Train SmolVLM to reproduce the Gemini3 extractions
+# Batch extraction with SmolVLM over a specified transcription group (training/validation)
 
 import os
 import random
@@ -37,32 +37,18 @@ parser.add_argument(
     default="HuggingFaceTB/SmolVLM-Instruct",
 )
 parser.add_argument(
-    "--training_group",
-    help="Transcription group to use for training",
+    "--group",
+    help="Transcription group to replicate
     type=str,
     required=False,
-    default="training",
+    default="validation
 )
 parser.add_argument(
-    "--validation_group",
-    help="Transcription group to use for validation",
-    type=str,
-    required=False,
-    default="validation",
-)
-parser.add_argument(
-    "--epochs",
-    help="Number of epochs to train",
+    "--epoch",
+    help="Training epoch to use
     type=int,
     required=False,
-    default=3,
-)
-parser.add_argument(
-    "--run_id",
-    help="Identifier for this training run",
-    type=str,
-    required=True,
-    default=None,
+    default=None
 )
 
 clargs = parser.parse_args()
@@ -97,10 +83,6 @@ def format_data(sample):
                     },
                 ],
             },
-            {
-                "role": "assistant",
-                "content": [{"type": "text", "text": assistant_message}],
-            },
         ],
     }
 
@@ -116,21 +98,16 @@ class RRTrainingDataset(Dataset):
 
     def __getitem__(self, idx):
         img = load_image(image_id_to_filename(self.labels[idx]))
-        json_data = load_json(
-            image_id_to_transcription_filename(self.labels[idx], group=self.group)
-        )
-        return self.labels[idx], img, json_data
+        return self.labels[idx], img
 
 
-train_dataset = RRTrainingDataset(group=clargs.training_group)
+dataset = RRTrainingDataset(group=clargs.roup)
 # Convert dataset to OAI messages
-train_dataset = [format_data(sample) for sample in train_dataset]
-test_dataset = RRTrainingDataset(group=clargs.validation_group)
-test_dataset = [format_data(sample) for sample in test_dataset]
+dataset = [format_data(sample) for sample in train_dataset]
 
 # Load model and tokenizer
 processor = AutoProcessor.from_pretrained(
-    clargs.model_id, size={"longest_edge": 15 * 384}
+    clargs.model_id, size={"longest_edge": 5 * 384}
 )
 model = AutoModelForImageTextToText.from_pretrained(
     clargs.model_id, torch_dtype=torch.bfloat16
@@ -139,48 +116,6 @@ model = AutoModelForImageTextToText.from_pretrained(
 image_token_id = processor.tokenizer.additional_special_tokens_ids[
     processor.tokenizer.additional_special_tokens.index("<image>")
 ]
-
-
-peft_config = LoraConfig(
-    lora_alpha=16,
-    lora_dropout=0.05,
-    r=16,
-    bias="none",
-    target_modules="all-linear",
-    task_type="CAUSAL_LM",
-    modules_to_save=[
-        "lm_head",
-        "embed_tokens",
-    ],
-)
-from trl import SFTConfig
-
-sargs = SFTConfig(
-    output_dir="%s/%s"
-    % (os.getenv("PDIR"), clargs.run_id),  # directory to save and repository id
-    num_train_epochs=clargs.epochs,  # number of training epochs
-    per_device_train_batch_size=1,  # 1,  # batch size per device during training
-    gradient_accumulation_steps=4,  # number of steps before performing a backward/update pass
-    gradient_checkpointing=True,  # use gradient checkpointing to save memory
-    optim="adamw_torch_fused",  # use fused adamw optimizer
-    logging_steps=5,  # log every 5 steps
-    save_strategy="epoch",  # save checkpoint every epoch
-    learning_rate=1e-4,  # 2e-4,  # learning rate, based on QLoRA paper
-    bf16=True,  # use bfloat16 precision
-    max_grad_norm=0.3,  # max gradient norm based on QLoRA paper
-    warmup_ratio=0.03,  # warmup ratio based on QLoRA paper
-    lr_scheduler_type="constant",  # use constant learning rate scheduler
-    push_to_hub=False,  # push model to hub
-    report_to="tensorboard",  # report metrics to tensorboard
-    logging_dir="%s/%s/logs"
-    % (os.getenv("PDIR"), clargs.run_id),  # directory to save logs
-    gradient_checkpointing_kwargs={
-        "use_reentrant": False
-    },  # use reentrant checkpointing
-    dataset_text_field="",  # need a dummy field for collator
-    dataset_kwargs={"skip_prepare_dataset": True},  # important for collator
-)
-sargs.remove_unused_columns = False  # important for collator
 
 
 # Create a data collator to encode text and image pairs
