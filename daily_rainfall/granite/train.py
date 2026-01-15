@@ -2,7 +2,6 @@
 
 # Granite model training script adapted for RRR
 import os
-import random
 from PIL import Image
 import argparse
 from RR_utils.hf import HFlogin
@@ -10,7 +9,13 @@ from RR_utils.image import cut_image
 
 HFlogin()  # Connect to Huggingface Hub - only needed for initial model weights download
 
-from rainfall_rescue.utils.pairs import get_index_list, load_pair, csv_to_json
+from daily_rainfall.utils.load import (
+    get_index_list,
+    load_image,
+    image_id_to_filename,
+    image_id_to_transcription_filename,
+    load_json,
+)
 
 import torch
 from torch.utils.data import Dataset
@@ -21,7 +26,7 @@ from peft import LoraConfig, PeftModel
 from trl import SFTTrainer
 
 # Text prompts - system and user
-from models.smolvlm.prompts import s_prompt, u_prompt
+from daily_rainfall.smolvlm.prompts import s_prompt, u_prompt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -30,34 +35,6 @@ parser.add_argument(
     type=str,
     required=False,
     default="ibm-granite/granite-vision-3.3-2b",
-)
-parser.add_argument(
-    "--purpose",
-    help="Training or test or neither",
-    type=str,
-    required=False,
-    default="Training",
-)
-parser.add_argument(
-    "--nmax",
-    help="Maximum number of training cases to use",
-    type=int,
-    required=False,
-    default=100,
-)
-parser.add_argument(
-    "--fake",
-    help="Use fake cases instead of real",
-    action="store_true",
-    required=False,
-    default=False,
-)
-parser.add_argument(
-    "--random_seed",
-    help="Control the set of 'random'; choices",
-    type=int,
-    required=False,
-    default=None,
 )
 parser.add_argument(
     "--epochs",
@@ -80,7 +57,20 @@ parser.add_argument(
     required=False,
     default=None,
 )
-
+parser.add_argument(
+    "--training_group",
+    help="Transcription group to use for training",
+    type=str,
+    required=False,
+    default="training",
+)
+parser.add_argument(
+    "--validation_group",
+    help="Transcription group to use for validation",
+    type=str,
+    required=False,
+    default="validation",
+)
 clargs = parser.parse_args()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -89,7 +79,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # Convert dataset to OAI messages
 def format_data(sample):
     # Desired output is JSON ormated csv data
-    assistant_message = csv_to_json(sample[2])
+    assistant_message = sample[2]
     # Cut the image into squares
     img = sample[1]
     if clargs.patch_size is not None:
@@ -119,43 +109,34 @@ def format_data(sample):
             },
             {
                 "role": "assistant",
-                "content": [{"type": "text", "text": assistant_message}],
+                "content": [{"type": "text", "text": str(assistant_message)}],
             },
         ],
     }
 
 
-# Make a training dataset from the RR image/CSV pairs
+# Make a training dataset from the image/Gemini transcription pairs
 class RRTrainingDataset(Dataset):
-    def __init__(self, max_n=None, seed=None):
-        if clargs.purpose.lower() == "test":
-            self.labels = get_index_list(
-                max_n=max_n, seed=seed, fake=clargs.fake, training=False
-            )
-        elif clargs.purpose[:5].lower() == "train":
-            self.labels = get_index_list(
-                max_n=max_n, seed=seed, fake=clargs.fake, training=True
-            )
-        else:
-            self.labels = get_index_list(
-                max_n=max_n, seed=seed, fake=clargs.fake, training=None
-            )
-
-        if clargs.random_seed is not None:
-            torch.manual_seed(clargs.random_seed)
-            random.seed(clargs.random_seed)
+    def __init__(self, group=None):
+        self.labels = get_index_list(group=group)
+        self.group = group
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        img, csv = load_pair(self.labels[idx])
-        return self.labels[idx], img, csv
+        img = load_image(image_id_to_filename(self.labels[idx]))
+        json_data = load_json(
+            image_id_to_transcription_filename(self.labels[idx], group=self.group)
+        )
+        return self.labels[idx], img, json_data
 
 
-dataset = RRTrainingDataset(max_n=clargs.nmax, seed=clargs.random_seed)
+train_dataset = RRTrainingDataset(group=clargs.training_group)
 # Convert dataset to OAI messages
-dataset = [format_data(sample) for sample in dataset]
+train_dataset = [format_data(sample) for sample in train_dataset]
+test_dataset = RRTrainingDataset(group=clargs.validation_group)
+test_dataset = [format_data(sample) for sample in test_dataset]
 
 
 # Load model and tokenizer
@@ -205,7 +186,6 @@ sargs.remove_unused_columns = False  # important for collator
 
 
 # Create a data collator to encode text and image pairs
-# Don't understand this bit - why can't the processor just operate on messages?
 
 
 def process_vision_info(messages: list[dict]) -> list[Image.Image]:
@@ -307,7 +287,7 @@ class SaveMergedCallback(TrainerCallback):
 trainer = SFTTrainer(
     model=model,
     args=sargs,
-    train_dataset=dataset,
+    train_dataset=train_dataset,
     peft_config=peft_config,
     processing_class=processor,
     data_collator=collate_fn,
@@ -316,12 +296,12 @@ trainer = SFTTrainer(
 
 
 # Start training, the model will be automatically saved to the Hub and the output directory
-try:
-    trainer.train(
-        resume_from_checkpoint=True
-    )  # Auto restart if possible (job is likely to be preempted at some point)
-except ValueError as e:
-    trainer.train(resume_from_checkpoint=False)  # No checkpoint, start from scratch
+# try:
+#     trainer.train(
+#         resume_from_checkpoint=True
+#     )  # Auto restart if possible (job is likely to be preempted at some point)
+# except ValueError as e:
+trainer.train(resume_from_checkpoint=False)  # No checkpoint, start from scratch
 
 # Save the final model
 trainer.save_model()
