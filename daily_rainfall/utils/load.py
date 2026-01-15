@@ -9,6 +9,34 @@ import re
 from PIL import Image
 
 
+# Convert an image id to an image file name
+def image_id_to_filename(image_id: str) -> str:
+    filename = f"{os.getenv('DOCS')}/Daily_Rainfall_UK/jpgs_300dpi/{image_id}.jpg"
+    return filename
+
+
+# Convert an image id to a transcription file name
+def image_id_to_transcription_filename(image_id: str, group="Test") -> str:
+    filename = (
+        f"{os.getenv('DOCS')}/Daily_Rainfall_UK/transcriptions/{group}/{image_id}.json"
+    )
+    return filename
+
+
+# Get the indices of all images with a transcription in a given group
+def get_index_list(group="Test"):
+    root = os.path.join(f"{os.getenv('DOCS')}/Daily_Rainfall_UK/transcriptions/{group}")
+    files = []
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        for fn in filenames:
+            image_id = f"{dirpath}/{fn}"
+            image_id = image_id[len(root) + 1 :]
+            if image_id.endswith(".json"):
+                image_id = re.sub(r"\.json$", "", image_id)
+                files.append(image_id)
+    return files
+
+
 # Get the image names (slow, there are 650,964 images)
 def get_image_list():
     root = os.path.join(f"{os.getenv('DOCS')}/Daily_Rainfall_UK/jpgs_300dpi")
