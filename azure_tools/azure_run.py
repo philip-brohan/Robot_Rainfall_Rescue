@@ -13,6 +13,7 @@ from azure.identity import (
 from azure.ai.ml import MLClient
 from azure.ai.ml import command, Output, Input
 from azure.ai.ml.constants import AssetTypes, InputOutputModes
+import secrets, string
 
 # Command to be run is everything in the input after the '--'
 #  or everything except the first command if there is no '--'
@@ -26,6 +27,18 @@ name = sys.argv[command_index]
 name = "".join(
     c if c.isalnum() else "-" for c in name
 )  # remove any non-alphanumeric characters
+
+# Generate a unique suffix for the job name
+ALPH = string.ascii_letters + string.digits  # base62
+
+
+def unique_suffix(n=6):
+    return "".join(secrets.choice(ALPH) for _ in range(n))
+
+
+def make_unique(name, n=6, sep="_"):
+    return f"{name}{sep}{unique_suffix(n)}"
+
 
 # Need to add the path to the script from the PYTHONPATH
 bindir = os.getcwd()
@@ -43,7 +56,7 @@ else:
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--compute", help="Compute to use", type=str, required=False, default="Philip-E4DS"
+    "--compute", help="Compute to use", type=str, required=False, default="Basic"
 )
 parser.add_argument("--name", help="Job name", type=str, required=False, default=None)
 parser.add_argument(
@@ -60,6 +73,9 @@ parser.add_argument(
     "--parallel", help="Run outputs in parallel", type=int, default=None
 )
 args = parser.parse_args()
+
+args.name = make_unique(args.name) if args.name else name
+
 
 # Get the Huggingface API key
 with open("%s/.huggingface_api" % os.getenv("HOME"), "r") as file:
@@ -86,8 +102,6 @@ ml_client = MLClient(
 )
 
 # define the job
-if args.name is None:
-    args.name = name
 command_job = command(
     name=args.name,
     experiment_name=args.experiment,
