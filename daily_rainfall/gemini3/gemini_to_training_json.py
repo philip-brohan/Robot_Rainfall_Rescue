@@ -5,25 +5,28 @@
 
 import os
 import json
-from daily_rainfall.utils.load import save_json, load_json
+from daily_rainfall.utils.load import load_json, image_id_to_transcription_filename
 
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--record_id",
-    help="Input Gemini JSON file",
+    "--image",
+    help="Image ID to convert",
     type=str,
     required=True,
 )
+parser.add_argument(
+    "--op_group",
+    help="Output group to convert",
+    type=str,
+    required=False,
+    default="training",
+)
 args = parser.parse_args()
 
-input_json = (
-    f"{os.getenv('DOCS')}/Daily_Rainfall_UK/transcriptions/Gemini3/%s" % args.record_id
-)
-output_json = (
-    f"{os.getenv('DOCS')}/Daily_Rainfall_UK/transcriptions/training/%s" % args.record_id
-)
+input_json = image_id_to_transcription_filename(args.image, group="Gemini3")
+output_json = image_id_to_transcription_filename(args.image, group=args.op_group)
 
 montharray = (
     "Jan",
@@ -44,7 +47,7 @@ gemini_data = load_json(input_json)
 training = {}
 for day in range(1, 32):
     day_key = f"Day {day}"
-    training[day_key] = [None] * 12
+    training[day_key] = ["null"] * 12
     for month in gemini_data["Month"]:
         midx = month["Month"][:3]  # first 3 letters of month name
         gmd = month["rainfall"]
@@ -66,7 +69,7 @@ for day in range(1, 32):
                         print(f"Error processing day {day_key}, month {midx}: {e}")
         val = month["total"]
         if "Totals" not in training:
-            training["Totals"] = [None] * 12
+            training["Totals"] = ["null"] * 12
         if any(c.isdigit() for c in str(val)):  # Gemini value contains a decimal digit
             training["Totals"][montharray.index(midx)] = val
         else:  # standardise all non-numeric values to 'null'
@@ -75,4 +78,3 @@ for day in range(1, 32):
 os.makedirs(os.path.dirname(output_json), exist_ok=True)
 with open(output_json, mode="w") as file:
     json.dump(training, file, indent=4)
-
