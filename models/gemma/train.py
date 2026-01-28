@@ -191,7 +191,6 @@ sargs.remove_unused_columns = False  # important for collator
 
 
 # Create a data collator to encode text and image pairs
-# Don't understand this bit - why can't the processor just operate on messages?
 
 
 def process_vision_info(messages: list[dict]) -> list[Image.Image]:
