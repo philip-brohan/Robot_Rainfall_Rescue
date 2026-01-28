@@ -1,32 +1,28 @@
 #!/usr/bin/env python
 
-# Train SmolVLM to reproduce the Gemini3 extractions
+# SmolVLM model training script adapted for daily rainfall
 
 import os
-import random
-from PIL import Image
 import argparse
 from RR_utils.hf import HFlogin
-from RR_utils.image import cut_image
 
 HFlogin()  # Connect to Huggingface Hub - only needed for initial model weights download
 
-from daily_rainfall.utils.load import (
-    get_index_list,
-    load_image,
-    image_id_to_filename,
-    image_id_to_transcription_filename,
-    load_json,
-)
-
 import torch
-from torch.utils.data import Dataset
 
-from transformers import AutoProcessor, AutoModelForImageTextToText, TrainerCallback
+from transformers import AutoProcessor, AutoModelForImageTextToText
 
-from peft import LoraConfig, PeftModel
-from trl import SFTTrainer
-
+# Text prompts - system and user
+from daily_rainfall.smolvlm.prompts import s_prompt, u_prompt
+from daily_rainfall.qwen.utils import DRTrainingDataset, CollateFn
+from daily_rainfall.smolvlm.config import (
+    set_SFTConfig,
+    set_LoraConfig,
+    IMAGE_HEIGHT,
+    IMAGE_WIDTH,
+    PATCH_SIZE,
+)
+from daily_rainfall.qwen.trainer import CustomSFTTrainer, SaveStateCallback
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -35,20 +31,6 @@ parser.add_argument(
     type=str,
     required=False,
     default="HuggingFaceTB/SmolVLM-Instruct",
-)
-parser.add_argument(
-    "--training_group",
-    help="Transcription group to use for training",
-    type=str,
-    required=False,
-    default="training",
-)
-parser.add_argument(
-    "--validation_group",
-    help="Transcription group to use for validation",
-    type=str,
-    required=False,
-    default="validation",
 )
 parser.add_argument(
     "--epochs",
@@ -64,286 +46,57 @@ parser.add_argument(
     required=True,
     default=None,
 )
-
+parser.add_argument(
+    "--training_group",
+    help="Transcription group to use for training",
+    type=str,
+    required=False,
+    default="training",
+)
 clargs = parser.parse_args()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Text prompts - system and user
-from daily_rainfall.smolvlm.prompts import s_prompt, u_prompt
+train_dataset = DRTrainingDataset(
+    group=clargs.training_group,
+    s_prompt=s_prompt,
+    u_prompt=u_prompt,
+    img_height=IMAGE_HEIGHT,
+    img_width=IMAGE_WIDTH,
+    patch_size=PATCH_SIZE,
+)
 
-
-# Convert dataset to OAI messages
-def format_data(sample):
-    # Desired output - json transcriptions
-    assistant_message = sample[2]
-    # Input image
-    img = sample[1]
-    blocks = [img]
-
-    return {
-        "messages": [
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": s_prompt}],
-            },
-            {
-                "role": "user",
-                "content": [{"type": "image", "image": block} for block in blocks]
-                + [
-                    {
-                        "type": "text",
-                        "text": u_prompt,
-                    },
-                ],
-            },
-            {
-                "role": "assistant",
-                "content": [{"type": "text", "text": assistant_message}],
-            },
-        ],
-    }
-
-
-# Make a training dataset from the image/Gemini transcription pairs
-class RRTrainingDataset(Dataset):
-    def __init__(self, group=None):
-        self.labels = get_index_list(group=group)
-        self.group = group
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, idx):
-        img = load_image(image_id_to_filename(self.labels[idx]))
-        json_data = load_json(
-            image_id_to_transcription_filename(self.labels[idx], group=self.group)
-        )
-        return self.labels[idx], img, json_data
-
-
-train_dataset = RRTrainingDataset(group=clargs.training_group)
-# Convert dataset to OAI messages
-train_dataset = [format_data(sample) for sample in train_dataset]
-test_dataset = RRTrainingDataset(group=clargs.validation_group)
-test_dataset = [format_data(sample) for sample in test_dataset]
+# Define model init arguments
+model_kwargs = dict(
+    attn_implementation="eager",  # Use "flash_attention_2" when running on Ampere or newer GPU, and 'eager' for older GPUs
+    torch_dtype=torch.bfloat16,  # What torch dtype to use, defaults to auto
+    device_map="auto",  # Let torch decide how to load the model
+)
 
 # Load model and tokenizer
-processor = AutoProcessor.from_pretrained(
-    clargs.model_id, size={"longest_edge": 15 * 384}
-)
-model = AutoModelForImageTextToText.from_pretrained(
-    clargs.model_id, torch_dtype=torch.bfloat16
-).to(device)
+model = AutoModelForImageTextToText.from_pretrained(clargs.model_id, **model_kwargs)
+processor = AutoProcessor.from_pretrained(clargs.model_id)
+data_collator = CollateFn(processor=processor)
 
-image_token_id = processor.tokenizer.additional_special_tokens_ids[
-    processor.tokenizer.additional_special_tokens.index("<image>")
-]
+peft_config = set_LoraConfig()
+sargs = set_SFTConfig(run_id=clargs.run_id, num_train_epochs=clargs.epochs)
 
+data_collator = CollateFn(processor=processor)
 
-peft_config = LoraConfig(
-    lora_alpha=16,
-    lora_dropout=0.05,
-    r=16,
-    bias="none",
-    target_modules="all-linear",
-    task_type="CAUSAL_LM",
-    modules_to_save=[
-        "lm_head",
-        "embed_tokens",
-    ],
-)
-from trl import SFTConfig
-
-sargs = SFTConfig(
-    output_dir="%s/%s"
-    % (os.getenv("PDIR"), clargs.run_id),  # directory to save and repository id
-    num_train_epochs=clargs.epochs,  # number of training epochs
-    per_device_train_batch_size=1,  # 1,  # batch size per device during training
-    gradient_accumulation_steps=4,  # number of steps before performing a backward/update pass
-    gradient_checkpointing=True,  # use gradient checkpointing to save memory
-    optim="adamw_torch_fused",  # use fused adamw optimizer
-    logging_steps=5,  # log every 5 steps
-    save_strategy="epoch",  # save checkpoint every epoch
-    learning_rate=1e-4,  # 2e-4,  # learning rate, based on QLoRA paper
-    bf16=True,  # use bfloat16 precision
-    max_grad_norm=0.3,  # max gradient norm based on QLoRA paper
-    warmup_ratio=0.03,  # warmup ratio based on QLoRA paper
-    lr_scheduler_type="constant",  # use constant learning rate scheduler
-    push_to_hub=False,  # push model to hub
-    report_to="tensorboard",  # report metrics to tensorboard
-    logging_dir="%s/%s/logs"
-    % (os.getenv("PDIR"), clargs.run_id),  # directory to save logs
-    gradient_checkpointing_kwargs={
-        "use_reentrant": False
-    },  # use reentrant checkpointing
-    dataset_text_field="",  # need a dummy field for collator
-    dataset_kwargs={"skip_prepare_dataset": True},  # important for collator
-)
-sargs.remove_unused_columns = False  # important for collator
-
-
-# Create a data collator to encode text and image pairs
-# Don't understand this bit - why can't the processor just operate on messages?
-
-
-def process_vision_info(messages: list[dict]) -> list[Image.Image]:
-    image_inputs = []
-    # Iterate through each conversation
-    for msg in messages:
-        # Get content (ensure it's a list)
-        content = msg.get("content", [])
-        if not isinstance(content, list):
-            content = [content]
-
-        # Check each content element for images
-        for element in content:
-            if isinstance(element, dict) and (
-                "image" in element or element.get("type") == "image"
-            ):
-                # Get the image and convert to RGB
-                if "image" in element:
-                    image = element["image"]
-                else:
-                    image = element
-                image_inputs.append(image.convert("RGB"))
-    return image_inputs
-
-
-def collate_fn(examples):
-    texts = []
-    images = []
-    for example in examples:
-        image_inputs = process_vision_info(example["messages"])
-        text = processor.apply_chat_template(
-            example["messages"], add_generation_prompt=False, tokenize=False
-        )
-        texts.append(text.strip())
-        images.append(image_inputs)
-
-    # Tokenize the texts and process the images
-    batch = processor(text=texts, images=images, return_tensors="pt", padding=True)
-
-    # The labels are the input_ids, and we mask the padding tokens and image tokens in the loss computation
-    labels = batch["input_ids"].clone()
-
-    labels[labels == processor.tokenizer.pad_token_id] = (
-        -100
-    )  # Mask padding tokens in labels
-    labels[labels == image_token_id] = -100  # Mask image token IDs in labels
-
-    batch["labels"] = labels
-    return batch
-
-
-# Define a callback to save a merged version of the model at the end of each epoch
-class SaveMergedCallback(TrainerCallback):
-    def __init__(self, base_model_id, out_dir):
-        self.base_model_id = base_model_id
-        self.out_dir = out_dir
-
-    # Called at end of epoch
-    def on_epoch_end(self, args, state, control, **kwargs):
-        print("[SaveMergedCallback] on_epoch_end called")
-        trainer.save_model()
-        torch.cuda.empty_cache()
-        model = AutoModelForImageTextToText.from_pretrained(
-            clargs.model_id, low_cpu_mem_usage=True
-        )
-        # Merge LoRA and base model and save
-        peft_model = PeftModel.from_pretrained(model, sargs.output_dir)
-        merged_model = peft_model.merge_and_unload()
-        merged_dir = os.path.join(
-            sargs.output_dir, f"merged_epoch_{int(getattr(state,'epoch',0))}"
-        )
-        os.makedirs(merged_dir, exist_ok=True)
-        merged_model.save_pretrained(
-            merged_dir, safe_serialization=True, max_shard_size="2GB"
-        )
-        # Also need to save the processor and tokenizer to make a reusable model
-        processor.save_pretrained(merged_dir)
-        processor.tokenizer.save_pretrained(merged_dir)
-        del merged_model
-        del peft_model
-        torch.cuda.empty_cache()
-        # Also compute train and eval loss for this epoch and log/save metrics
-        try:
-            tr = None
-            if isinstance(kwargs, dict):
-                tr = kwargs.get("trainer")
-            if tr is None:
-                tr = globals().get("trainer")
-
-            def safe_eval_loss(trainer, dataset, name):
-                if trainer is None or dataset is None:
-                    print(f"Skipping {name} eval: trainer or dataset is None")
-                    return None
-                try:
-                    res = trainer.evaluate(eval_dataset=dataset)
-                    if not isinstance(res, dict):
-                        print(f"Evaluation for {name} returned non-dict: {type(res)}")
-                        return None
-                    return res.get("eval_loss")
-                except Exception as e:
-                    print(f"Evaluation failed for {name}:", e)
-                    return None
-
-            # Prefer trainer attributes, fall back to globals
-            train_ds = getattr(tr, "train_dataset", None) if tr is not None else None
-            if train_ds is None:
-                train_ds = globals().get("train_dataset")
-            eval_ds = getattr(tr, "eval_dataset", None) if tr is not None else None
-            if eval_ds is None:
-                eval_ds = globals().get("test_dataset") or globals().get("eval_dataset")
-
-            train_loss = safe_eval_loss(tr, train_ds, "train")
-            eval_loss = safe_eval_loss(tr, eval_ds, "eval")
-
-            epoch_num = int(getattr(state, "epoch", 0))
-            t_str = (
-                f"{train_loss:.4f}"
-                if isinstance(train_loss, (int, float))
-                else str(train_loss)
-            )
-            e_str = (
-                f"{eval_loss:.4f}"
-                if isinstance(eval_loss, (int, float))
-                else str(eval_loss)
-            )
-            print(f"[epoch {epoch_num}] train_loss={t_str} eval_loss={e_str}")
-
-            try:
-                if tr is not None:
-                    metrics = {}
-                    if isinstance(train_loss, (int, float)):
-                        metrics["train_loss"] = train_loss
-                    if isinstance(eval_loss, (int, float)):
-                        metrics["eval_loss"] = eval_loss
-                    if metrics:
-                        # log/save if available
-                        if hasattr(tr, "log_metrics"):
-                            tr.log_metrics("epoch", metrics)
-                        if hasattr(tr, "save_metrics"):
-                            tr.save_metrics("epoch", metrics)
-            except Exception:
-                pass
-        except Exception as e:
-            print("Failed to compute train/eval loss:", e)
-
-
-trainer = SFTTrainer(
+trainer = CustomSFTTrainer(
     model=model,
     args=sargs,
     train_dataset=train_dataset,
-    eval_dataset=test_dataset,
+    eval_dataset=None,
     peft_config=peft_config,
     processing_class=processor,
-    data_collator=collate_fn,
-    callbacks=[SaveMergedCallback(clargs.model_id, sargs.output_dir)],
+    data_collator=data_collator,
+    callbacks=[
+        SaveStateCallback(out_dir=f"{os.getenv('PDIR')}/{clargs.run_id}"),
+    ],
 )
 
-
-# Start training, the model will be automatically saved to the Hub and the output directory
+# Start training, the model will be saved to the output directory at the end of each epoch
 try:
     trainer.train(
         resume_from_checkpoint=True
