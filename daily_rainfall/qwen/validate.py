@@ -10,6 +10,7 @@ from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 # Text prompts - system and user
 from daily_rainfall.smolvlm.prompts import s_prompt, u_prompt
+
 from daily_rainfall.qwen.utils import (
     DRTrainingDataset,
     CollateFn,
@@ -19,8 +20,8 @@ from daily_rainfall.qwen.utils import (
 from daily_rainfall.qwen.config import (
     IMAGE_HEIGHT,
     IMAGE_WIDTH,
+    PATCH_SIZE,
 )
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -43,13 +44,6 @@ parser.add_argument(
     type=str,
     required=False,
     default="validation",
-)
-parser.add_argument(
-    "--patch_size",
-    help="Image patch size (pixels)",
-    type=int,
-    required=False,
-    default=None,
 )
 parser.add_argument(
     "--batch_size",
@@ -76,7 +70,7 @@ eval_dataset = DRTrainingDataset(
     u_prompt=u_prompt,
     img_height=IMAGE_HEIGHT,
     img_width=IMAGE_WIDTH,
-    patch_size=clargs.patch_size,
+    patch_size=PATCH_SIZE,
 )
 
 loader = DataLoader(
@@ -86,4 +80,5 @@ loader = DataLoader(
 )
 
 avg_loss = evaluate_loss(model, loader, device)
+print(f"Model ID: {clargs.model_id}")
 print(f"Loss for group {clargs.validation_group} = {avg_loss}")

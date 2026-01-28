@@ -24,7 +24,7 @@ from daily_rainfall.qwen.debug import pretty_batch_summary
 
 # Make message in OpenAI API chat format
 def format_data(
-    image, s_prompt, u_prompt, target=None, patch_size=None, patch_overlap=0.1
+    label, image, s_prompt, u_prompt, target=None, patch_size=None, patch_overlap=0.1
 ):
     # Cut the image into patches?
     if patch_size is not None:
@@ -33,6 +33,10 @@ def format_data(
         blocks = [image]  # Use the whole image if no patch size is specified
 
     msg = [
+        {
+            "role": "system",
+            "content": [{"type": "text", "text": s_prompt}],
+        },
         {
             "role": "user",
             "content": [{"type": "image", "image": block} for block in blocks]
@@ -46,16 +50,19 @@ def format_data(
                     "text": u_prompt,
                 },
             ],
-        }
+        },
     ]
     if target is not None:
         msg.append(
             {
                 "role": "assistant",  # Target is the expected output
-                "content": [{"type": "text", "text": target}],
+                "content": [{"type": "text", "text": str(target)}],
             },
         )
-    return {"messages": msg}
+    return {
+        "messages": msg,
+        "label": label,
+    }
 
 
 # Make a training dataset from the image/Gemini transcription pairs
@@ -99,10 +106,55 @@ class DRTrainingDataset(Dataset):
         else:
             target = None  # No target - we're doing inference
         return format_data(
+            self.labels[idx],
             img,
             self.s_prompt,
             self.u_prompt,
             target=target,
+            patch_size=self.patch_size,
+            patch_overlap=self.patch_overlap,
+        )
+
+
+# Make an extraction dataset from a list of image IDs
+class DRExtractDataset(Dataset):
+    def __init__(
+        self,
+        s_prompt,
+        u_prompt,
+        image_list=[],
+        img_width=None,
+        img_height=None,
+        patch_size=None,
+        patch_overlap=0.1,
+    ):
+        self.image_list = image_list
+        self.s_prompt = s_prompt
+        self.u_prompt = u_prompt
+        self.img_width = img_width
+        self.img_height = img_height
+        self.patch_size = patch_size
+        self.patch_overlap = patch_overlap
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        img = load_image(image_id_to_filename(self.image_list[idx]))
+        if self.img_width is not None and self.img_height is not None:
+            new_size = (self.img_width, self.img_height)
+            img = img.resize(new_size, resample=Image.LANCZOS)
+        else:
+            if self.img_width is not None or self.img_height is not None:
+                raise ValueError(
+                    "Both img_width and img_height must be specified together."
+                )
+        return format_data(
+            self.image_list[idx],
+            img,
+            self.s_prompt,
+            self.u_prompt,
+            target=None,
             patch_size=self.patch_size,
             patch_overlap=self.patch_overlap,
         )
@@ -238,22 +290,16 @@ def load_model_from_save(
             raise RuntimeError(f"Failed to load model or PEFT from {model_dir}: {e}")
 
 
-# Run the model on a validation
-def evaluate_loss(model, dataloader, device, processor):
+# Calculate validation statistics
+def evaluate_loss(model, dataloader, device):
     model.eval()
     total_loss = 0.0
     total_tokens = 0
     with torch.no_grad():
         for batch in dataloader:
             batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model.generate(**batch)
-            print(
-                f"[evaluate_loss] output summary:\n{pformat(pretty_batch_summary(outputs))}"
-            )
+            outputs = model(**batch)
             loss = outputs.loss
-            decoded = processor.decode(outputs, skip_special_tokens=True)
-            print(decoded)
-
             if loss is None:
                 continue
             # accumulate by batch size (labels contain -100 for ignored tokens)
@@ -266,6 +312,8 @@ def evaluate_loss(model, dataloader, device, processor):
     return avg_loss
 
 
+# This doesn't work - model.generate() is failing (incorrect input)
+# For the moment, use the extract method instead (this might be faster, if I can get it working).
 def generate_output(
     model, dataloader, device, processor, max_new_tokens=5000, num_beams=1
 ):

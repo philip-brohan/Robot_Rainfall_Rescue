@@ -8,6 +8,10 @@ from trl import SFTConfig
 IMAGE_HEIGHT = 1971
 IMAGE_WIDTH = 1200
 
+# Image patch size.
+# If not None, images will be split into patches of this size.
+PATCH_SIZE = None
+
 
 def set_SFTConfig(**overrides):
     """
