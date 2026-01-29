@@ -2,7 +2,7 @@
 
 import os
 import csv
-import json
+import json5 as json
 import random
 import re
 

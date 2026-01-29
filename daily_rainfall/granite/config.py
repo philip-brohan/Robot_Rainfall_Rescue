@@ -5,7 +5,7 @@ from peft import LoraConfig
 from trl import SFTConfig
 
 # Standard image size
-# SmolVLM can take full size images
+# Granite can take full size images
 IMAGE_HEIGHT = None
 IMAGE_WIDTH = None
 

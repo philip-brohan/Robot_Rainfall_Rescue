@@ -172,3 +172,89 @@ def plot_totals(ax_totals, dd1, group=None, comparison=None):
                 fontsize=12,
                 color="black",
             )
+
+
+def plot_daily_table_consensus(ax_digitised, dd):
+    ax_digitised.set_xlim(0.5, 12.5)
+    ax_digitised.set_xticks(range(1, 13))
+    ax_digitised.set_xticklabels(
+        (
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        )
+    )
+    ax_digitised.xaxis.set_ticks_position("top")
+    ax_digitised.xaxis.set_label_position("top")
+    ax_digitised.set_ylim(0, 32)
+    ax_digitised.set_yticks(range(1, 32))
+    ax_digitised.set_yticklabels(range(1, 32))
+    ax_digitised.invert_yaxis()
+    ax_digitised.set_aspect("auto")
+
+    for day in range(1, 32):
+        day_key = f"Day {day}"
+        if day_key in dd[0]:
+            for month_idx in range(12):
+                val = []
+                for model in dd:
+                    val.append(model[day_key][month_idx])
+                counts = Counter(val)
+                most_common = counts.most_common(1)[0]
+                val = most_common[0]
+                val_count = most_common[1]
+                if val_count > 2:
+                    colour = "blue"
+                elif val_count == 2:
+                    colour = "black"
+                else:
+                    colour = "red"
+                ax_digitised.text(
+                    month_idx + 1,
+                    day,
+                    val,
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    color=colour,
+                )
+
+
+def plot_totals_consensus(ax_totals, dd):
+    ax_totals.set_xlim(0.5, 12.5)
+    ax_totals.set_ylim(0, 1)
+    ax_totals.set_xticks([])
+    ax_totals.set_yticks([])
+
+    for month_idx in range(12):
+        val = []
+        for model in dd:
+            val.append(model["Totals"][month_idx])
+        counts = Counter(val)
+        most_common = counts.most_common(1)[0]
+        val = most_common[0]
+        val_count = most_common[1]
+        if val_count > 2:
+            colour = "blue"
+        elif val_count == 2:
+            colour = "black"
+        else:
+            colour = "red"
+        ax_totals.text(
+            month_idx + 1,
+            0.5,
+            val,
+            ha="center",
+            va="center",
+            fontsize=12,
+            color=colour,
+        )

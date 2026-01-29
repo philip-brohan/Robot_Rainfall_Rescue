@@ -14,8 +14,8 @@ dependencies:
 # Gemini API
   - google-generativeai=0.8.5
   - grpcio # Don't use this, but it's required by google-generativeai
-
-  
+# Bettr JSON
+  - json5  
 # Download images from Google Drive
   - rclone=1.69
 
