@@ -14,10 +14,12 @@ dependencies:
 # Gemini API
   - google-generativeai=0.8.5
   - grpcio # Don't use this, but it's required by google-generativeai
-# Bettr JSON
+# Better JSON
   - json5  
 # Download images from Google Drive
   - rclone=1.69
+# Geospatial libraries
+  - cartopy
 
 # Azure
   - marshmallow=3.26  # V4 breaks azure login
@@ -47,6 +49,7 @@ dependencies:
       - tensorboardX
       - tensorboard
       - opencensus-ext-logging
+      - pymilvus[milvus_lite]
       - git+https://github.com/huggingface/diffusers
      
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# This script makes an azure compute environment for running Llama on the A100 node
+# This script makes an azure compute environment for running Huggingface models on GPU nodes
 
 import os
 from azure.identity import (

@@ -95,3 +95,63 @@ def load_json(json_path):
 def get_random_image_sample(sample_size=10):
     image_list = get_image_list()
     return random.sample(image_list, sample_size)
+
+
+def parse_station_metadata(path: str):
+    """Parse a station CSV (RAPHOE-style) and return station_no, name, lat, long.
+
+    Returns a dict: {'station_no': str or None, 'name': str or None,
+    'lat': float or None, 'long': float or None}
+    """
+    station_no = None
+    name = None
+    lat = None
+    long = None
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+
+    with open(path, newline="", encoding="utf-8") as fh:
+        reader = csv.reader(fh)
+        for row in reader:
+            if not any(cell.strip() for cell in row):
+                continue
+            first = row[0].strip()
+            # station name: first non-empty row that isn't a keyword row
+            if (
+                name is None
+                and first
+                and not first.lower().startswith(
+                    ("grid ref", "station no", "january", "february")
+                )
+            ):
+                name = first
+                # continue scanning for gridref / station no
+                continue
+
+            if first.lower().startswith("station no"):
+                parts = [c.strip() for c in row if c.strip()]
+                if len(parts) >= 2:
+                    station_no = parts[1]
+                continue
+
+            if first.lower().startswith("grid ref"):
+                # e.g. Grid ref,IC2117701042,Long,-7.670978,Lat,54.856858,Elevation,110,ft
+                parts = [c.strip() for c in row if c.strip()]
+                # parse key,value pairs
+                for i in range(0, len(parts) - 1, 2):
+                    key = parts[i].lower()
+                    val = parts[i + 1]
+                    if key.startswith("long"):
+                        try:
+                            long = float(val)
+                        except Exception:
+                            long = None
+                    elif key.startswith("lat"):
+                        try:
+                            lat = float(val)
+                        except Exception:
+                            lat = None
+                continue
+
+    return {"station_no": station_no, "name": name, "lat": lat, "long": long}

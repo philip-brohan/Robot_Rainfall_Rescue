@@ -258,3 +258,16 @@ def plot_totals_consensus(ax_totals, dd):
             fontsize=12,
             color=colour,
         )
+
+
+def get_consensus_monthly_averages(dd):
+    monthly_averages = []
+    for month_idx in range(12):
+        val = []
+        for model in dd:
+            val.append(model["Totals"][month_idx])
+        counts = Counter(val)
+        most_common = counts.most_common(1)[0]
+        val = most_common[0]
+        monthly_averages.append(float(val))
+    return monthly_averages

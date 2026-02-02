@@ -12,6 +12,9 @@ dependencies:
 # Huggingface transformers library
   - huggingface_hub>=0.33
   - transformers>=4.53.1
+# Better JSON
+  - json5  
+
 
 # Torch backend for transformers
   - pip

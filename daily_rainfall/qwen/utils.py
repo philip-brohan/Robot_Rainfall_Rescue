@@ -120,24 +120,29 @@ class DRTrainingDataset(Dataset):
 class DRExtractDataset(Dataset):
     def __init__(
         self,
-        s_prompt,
-        u_prompt,
+        model_id=None,
+        s_prompt=None,
+        u_prompt=None,
         image_list=[],
         img_width=None,
         img_height=None,
         patch_size=None,
         patch_overlap=0.1,
     ):
-        self.image_list = image_list
         self.s_prompt = s_prompt
         self.u_prompt = u_prompt
         self.img_width = img_width
         self.img_height = img_height
         self.patch_size = patch_size
         self.patch_overlap = patch_overlap
+        self.image_list = []
+        for l in image_list:  # Only extract images without existing transcriptions
+            op_fname = image_id_to_transcription_filename(l, group=model_id)
+            if not os.path.exists(op_fname):
+                self.image_list.append(l)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.image_list)
 
     def __getitem__(self, idx):
         img = load_image(image_id_to_filename(self.image_list[idx]))
