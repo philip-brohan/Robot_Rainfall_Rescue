@@ -71,6 +71,7 @@ with open(f"{HERE}/{clargs.image_ids_file}", "r") as f:
 
 extract_dataset = DRExtractDataset(
     image_list=image_ids,
+    model_id=clargs.model_id,
     s_prompt=s_prompt,
     u_prompt=u_prompt,
     img_height=IMAGE_HEIGHT,
