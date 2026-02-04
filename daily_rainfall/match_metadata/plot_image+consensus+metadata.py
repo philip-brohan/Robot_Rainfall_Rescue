@@ -41,6 +41,13 @@ parser.add_argument(
     type=str,
     required=True,
 )
+parser.add_argument(
+    "--top_k",
+    help="Number of top matching RR stations to display",
+    type=int,
+    required=False,
+    default=3,
+)
 args = parser.parse_args()
 if len(args.model) < 2:
     raise ValueError("Please provide at least two model IDs using --model")
@@ -86,7 +93,7 @@ plot_totals_consensus(ax_totals1, extracted)
 # Find matching RR stations
 RRdb = get_RR_monthly_db()
 monthly_averages = get_consensus_monthly_averages(extracted)
-RR_results = search_RR_monthly_db(RRdb, monthly_averages, top_k=5)
+RR_results = search_RR_monthly_db(RRdb, monthly_averages, top_k=args.top_k)
 
 # Look up those stations' metadata
 # Load station metadata from file
@@ -243,6 +250,7 @@ map_ax.set_xticks([])
 map_ax.set_yticks([])
 map_ax.set_aspect("equal")
 # Plot the station location(s) from the top RR results
+count = 0
 for res in RR_results[0]:
     station_number = res.entity.get("station_number")
     if station_number in station_meta:
@@ -253,13 +261,22 @@ for res in RR_results[0]:
                 long,
                 lat,
                 marker="o",
-                color="red",
+                color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"][
+                    count % 5
+                ],  # Match colours above - from the tab10 colour cycle, matplotlib default
                 markersize=8,
                 markeredgecolor="black",
                 transform=ccrs.PlateCarree(),
                 zorder=20,
             )
+        count += 1
 
+# Add top-centre title showing the image identifier, inserting newlines after '/'
+title = str(args.image).replace("/", "/\n")
+try:
+    fig.suptitle(title, x=0.5, y=0.95, ha="center", va="top", fontsize="x-large")
+except Exception:
+    fig.text(0.5, 0.95, title, ha="center", va="top", fontsize="x-large")
 
 # Render
 fig.savefig("consensus+metadata.webp")

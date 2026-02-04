@@ -218,6 +218,9 @@ def plot_daily_table_consensus(ax_digitised, dd):
                     colour = "black"
                 else:
                     colour = "red"
+                alpha = 1.0
+                if val == "null":
+                    alpha = 0.5
                 ax_digitised.text(
                     month_idx + 1,
                     day,
@@ -226,6 +229,7 @@ def plot_daily_table_consensus(ax_digitised, dd):
                     va="center",
                     fontsize=12,
                     color=colour,
+                    alpha=alpha,
                 )
 
 
@@ -269,5 +273,9 @@ def get_consensus_monthly_averages(dd):
         counts = Counter(val)
         most_common = counts.most_common(1)[0]
         val = most_common[0]
-        monthly_averages.append(float(val))
+        try:
+            val = float(val)
+        except Exception:
+            val = 0.0
+        monthly_averages.append(val)
     return monthly_averages
