@@ -142,14 +142,11 @@ def plot_totals(ax_totals, dd1, group=None, comparison=None):
                     comp_val = comparison["Totals"][month_idx]
                     if val == comp_val:
                         if val == "null":
-                            colour = "light blue"
+                            colour = "lightblue"
                         else:
                             colour = "blue"
                     else:
-                        if val == "null":
-                            colour = "light red"
-                        else:
-                            colour = "red"
+                        colour = "red"
                 ax_totals.text(
                     month_idx + 1,
                     0.5,
@@ -214,13 +211,14 @@ def plot_daily_table_consensus(ax_digitised, dd):
                 val_count = most_common[1]
                 if val_count > 2:
                     colour = "blue"
+                    if val == "null":
+                        colour = "lightblue"
                 elif val_count == 2:
                     colour = "black"
+                    if val == "null":
+                        colour = "grey"
                 else:
                     colour = "red"
-                alpha = 1.0
-                if val == "null":
-                    alpha = 0.5
                 ax_digitised.text(
                     month_idx + 1,
                     day,
@@ -229,7 +227,6 @@ def plot_daily_table_consensus(ax_digitised, dd):
                     va="center",
                     fontsize=12,
                     color=colour,
-                    alpha=alpha,
                 )
 
 
@@ -264,7 +261,7 @@ def plot_totals_consensus(ax_totals, dd):
         )
 
 
-def get_consensus_monthly_averages(dd):
+def get_consensus_monthly_averages(dd, k=1):
     monthly_averages = []
     for month_idx in range(12):
         val = []
@@ -274,8 +271,34 @@ def get_consensus_monthly_averages(dd):
         most_common = counts.most_common(1)[0]
         val = most_common[0]
         try:
-            val = float(val)
+            if counts[most_common[0]] < k:
+                val = None
         except Exception:
-            val = 0.0
+            val = None
         monthly_averages.append(val)
     return monthly_averages
+
+
+def get_consensus_daily_averages(dd, k=1):
+    """Return consensus daily values and Totals like get_consensus_monthly_averages does for totals.
+    Returns a dict with keys 'Day 1'..'Day 31' each a list of 12 floats, and 'Totals' a list of 12 floats.
+    """
+    if not dd:
+        return {}
+    consensus = {}
+    for day in range(1, 32):
+        day_key = f"Day {day}"
+        if day_key in dd[0]:
+            consensus[day_key] = []
+            for month_idx in range(12):
+                vals = [model[day_key][month_idx] for model in dd]
+                counts = Counter(vals)
+                most_common = counts.most_common(1)[0][0]
+                try:
+                    v = most_common
+                    if counts[most_common] < k:
+                        v = None
+                except Exception:
+                    v = None
+                consensus[day_key].append(v)
+    return consensus

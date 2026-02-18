@@ -93,6 +93,11 @@ plot_totals_consensus(ax_totals1, extracted)
 # Find matching RR stations
 RRdb = get_RR_monthly_db()
 monthly_averages = get_consensus_monthly_averages(extracted)
+for i in range(len(monthly_averages)):
+    try:
+        monthly_averages[i] = float(monthly_averages[i])
+    except Exception:
+        monthly_averages[i] = 0.0
 RR_results = search_RR_monthly_db(RRdb, monthly_averages, top_k=args.top_k)
 
 # Look up those stations' metadata
