@@ -51,6 +51,7 @@ dependencies:
       - opencensus-ext-logging
       - pymilvus[milvus_lite]
       - git+https://github.com/huggingface/diffusers
+      - mistral-common
      
 
 variables:
