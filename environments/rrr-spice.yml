@@ -52,7 +52,7 @@ dependencies:
       - pymilvus[milvus_lite]
       - git+https://github.com/huggingface/diffusers
       - mistral-common
-     
+      - outlines
 
 variables:
 # Tell python to look for modules in the root directory of the project

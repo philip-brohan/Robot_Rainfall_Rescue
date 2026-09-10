@@ -155,3 +155,131 @@ def parse_station_metadata(path: str):
                 continue
 
     return {"station_no": station_no, "name": name, "lat": lat, "long": long}
+
+
+# Check the transcription JSON has the right components
+def validate_daily_rainfall_structure(obj, strict_keys=True):
+    """
+    Returns:
+    {
+    "is_valid": bool,
+    "missing_keys": [..],
+    "unexpected_keys": [..], # only populated when strict_keys=True
+    "bad_keys": {
+    "KeyName": ["reason 1", "reason 2", ...]
+    }
+    }
+    """
+    report = {
+        "is_valid": True,
+        "missing_keys": [],
+        "unexpected_keys": [],
+        "bad_keys": {},
+    }
+
+    expected_day_keys = [f"Day {i}" for i in range(1, 32)]
+    expected_keys = set(expected_day_keys + ["Totals"])
+
+    if not isinstance(obj, dict):
+        report["is_valid"] = False
+        report["bad_keys"]["<root>"] = [f"Expected dict, got {type(obj).__name__}"]
+        return report
+
+    actual_keys = set(obj.keys())
+
+    missing = sorted(expected_keys - actual_keys)
+    if missing:
+        report["missing_keys"] = missing
+        report["is_valid"] = False
+
+    if strict_keys:
+        unexpected = sorted(actual_keys - expected_keys)
+        if unexpected:
+            report["unexpected_keys"] = unexpected
+            report["is_valid"] = False
+
+    def add_bad(key, message):
+        report["bad_keys"].setdefault(key, []).append(message)
+        report["is_valid"] = False
+
+    def is_valid_cell(v):
+        # bool is a subclass of int, so exclude it explicitly
+        return v == "null" or (isinstance(v, (int, str)) and not isinstance(v, bool))
+
+    for key in expected_day_keys + ["Totals"]:
+        if key not in obj:
+            continue
+
+        value = obj[key]
+        if not isinstance(value, list):
+            add_bad(key, f"Expected list, got {type(value).__name__}")
+            continue
+
+        if len(value) != 12:
+            add_bad(key, f"Expected list length 12, got {len(value)}")
+
+        for i, cell in enumerate(value, start=1):
+            if not is_valid_cell(cell):
+                add_bad(
+                    key,
+                    f"Month index {i}: expected number or 'null', got {repr(cell)} ({type(cell).__name__})",
+                )
+
+    return report
+
+
+def repair_daily_rainfall_structure(report, obj, keep_unexpected=False):
+    """
+    Repair a transcription object using a validation report from
+    validate_daily_rainfall_structure().
+
+    Rules:
+    - Ensures keys "Day 1"..."Day 31" and "Totals" exist.
+    - Ensures each expected key has a list of length 12.
+    - Replaces missing/invalid cells with "N/A".
+    - If keep_unexpected=False, drops non-standard keys.
+
+    Args:
+        report (dict): Output from validate_daily_rainfall_structure().
+        obj (dict): Original loaded JSON structure.
+        keep_unexpected (bool): Keep keys not in expected schema.
+
+    Returns:
+        dict: Repaired structure.
+    """
+    expected_day_keys = [f"Day {i}" for i in range(1, 32)]
+    expected_keys = expected_day_keys + ["Totals"]
+
+    def valid_cell(v):
+        return v == "null" or (isinstance(v, (int, str)) and not isinstance(v, bool))
+
+    # Start from an empty dict unless caller wants to keep extra keys
+    repaired = dict(obj) if (keep_unexpected and isinstance(obj, dict)) else {}
+
+    # If root is not a dict, rebuild from scratch
+    source = obj if isinstance(obj, dict) else {}
+
+    for key in expected_keys:
+        value = source.get(key)
+
+        # Missing key or non-list -> replace whole month array
+        if not isinstance(value, list):
+            repaired[key] = ["N/A"] * 12
+            continue
+
+        fixed = []
+        for i in range(12):
+            if i < len(value):
+                cell = value[i]
+                fixed.append(cell if valid_cell(cell) else "N/A")
+            else:
+                fixed.append("N/A")
+
+        repaired[key] = fixed
+
+    # If strict validation found unexpected keys and we are not keeping them, remove them
+    if not keep_unexpected:
+        for bad_key in report.get("unexpected_keys", []):
+            repaired.pop(bad_key, None)
+
+    return repaired

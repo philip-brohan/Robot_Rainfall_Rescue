@@ -11,6 +11,8 @@ from daily_rainfall.utils.load import (
     load_json,
     image_id_to_filename,
     image_id_to_transcription_filename,
+    validate_daily_rainfall_structure,
+    repair_daily_rainfall_structure,
 )
 from daily_rainfall.utils.validate import (
     plot_image,
@@ -61,10 +63,21 @@ for model_id in args.model:
     fname = image_id_to_transcription_filename(args.image, group=model_id)
     try:
         data = load_json(fname)
+        report = validate_daily_rainfall_structure(data)
+        if not report["is_valid"]:
+            print(report)
+            print(f"Data from {fname} is not valid, attempting repair...")
+            data = repair_daily_rainfall_structure(report, data)
+            report = validate_daily_rainfall_structure(data)
+            if not report["is_valid"]:
+                print(f"Repair failed for {fname}, skipping this file.")
+                continue
+            else:
+                print(f"Repair succeeded for {fname}.")
         extracted.append(data)
-    except Exception:
+    except Exception as e:
         print(f"Failed load of {fname}")
-        sys.exit(1)
+        raise (e)
 
 
 # Create the figure
@@ -257,10 +270,10 @@ map_ax.set_aspect("equal")
 # Plot the station location(s) from the top RR results
 count = 0
 for res in RR_results[0]:
-    station_number = res.entity.get("station_number")
-    if station_number in station_meta:
-        lat = station_meta[station_number].get("lat")
-        long = station_meta[station_number].get("long")
+    station_name = res.entity.get("station_name")
+    if station_name in station_meta:
+        lat = station_meta[station_name].get("latitude")
+        long = station_meta[station_name].get("longitude")
         if lat is not None and long is not None:
             map_ax.plot(
                 long,

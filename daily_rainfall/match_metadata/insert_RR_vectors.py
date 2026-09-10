@@ -4,7 +4,7 @@
 import os
 import sys
 from pymilvus import MilvusClient
-from rainfall_rescue.utils.pairs import get_index_list, load_pair
+from daily_rainfall.match_metadata.mdpairs import find_csv_files, load_station_csv
 
 # Mhere to put the db file
 db_file = f"{os.getenv('PDIR')}/RR_monthly.db"
@@ -12,18 +12,26 @@ db_file = f"{os.getenv('PDIR')}/RR_monthly.db"
 # Set up a Milvus client
 client = MilvusClient(uri=db_file)
 
-# Get a list of all the RR pages
-pages = get_index_list(fake=False, shuffle=False)
+# Get a list of all the RR pages = find_csv_files()
+files = find_csv_files()
+
+# Speed things up - only interested in a limited range of years
+startyear = 1871
+endyear = 1880
 
 
 # Add a single annual vector to the db
-def insert_year(client, station_number, station_name, year, monthly_averages):
+def insert_year(
+    client, station_number, station_name, latitude, longitude, year, monthly_averages
+):
     client.insert(
         "rainfall_rescue",
         {
             "monthly_averages": monthly_averages,
             "station_number": station_number,
             "station_name": station_name,
+            "Longitude": longitude,
+            "Latitude": latitude,
             "year": year,
         },
     )
@@ -45,10 +53,13 @@ monthNumbers = {
 }
 
 
-# Loop over all the pages
+# Loop over all the station records
 count = 0
-for p in pages:
-    img, csv = load_pair(p)
+for p in files:
+    csv = load_station_csv(p)
+    if csv["Latitude"] == "null" or csv["Longitude"] == "null":
+        print("No lat/lon for page:", p)
+        continue
     try:
         station_number = csv["Number"]
     except KeyError:
@@ -57,6 +68,7 @@ for p in pages:
         continue
     try:
         station_name = csv["Name"]
+        print(f"Processing station {station_number} - {station_name}")
     except KeyError:
         print("No station name for page:", p)
         station_name = "UNKNOWN"
@@ -66,8 +78,10 @@ for p in pages:
         print("No years for page:", p)
         continue
     # Loop over all the years for this station
-    for idx in range(10):
-        year = csv["Years"][idx]
+    for idx in range(len(years)):
+        year = years[idx]
+        if year == "null" or int(year) < startyear or int(year) > endyear:
+            continue
         monthly_averages = [0] * 12
         for month in monthNumbers.keys():
             try:
@@ -75,8 +89,19 @@ for p in pages:
             except ValueError:
                 # print("Bad value:", csv[month][idx], "for", station_number, year, month)
                 value = 0.0
+            except KeyError as e:
+                print(csv.keys())
+                raise e
             monthly_averages[monthNumbers[month] - 1] = value
-        insert_year(client, station_number, station_name, year, monthly_averages)
+        insert_year(
+            client,
+            station_number,
+            station_name,
+            csv["Latitude"],
+            csv["Longitude"],
+            year,
+            monthly_averages,
+        )
         count += 1
         if count % 1000 == 0:
             print(f"Inserted {count} vectors so far")

@@ -5,29 +5,44 @@
 import os
 import sys
 import json5 as json
-from daily_rainfall.utils.load import parse_station_metadata
+from daily_rainfall.match_metadata.mdpairs import find_csv_files, load_station_csv
 
-root = os.path.join(os.getenv("PDIR"), "../rainfall-rescue-master/DATA")
+# Get a list of all the RR pages = find_csv_files()
+files = find_csv_files()
+
+# Get a list of all the RR pages = find_csv_files()
+files = find_csv_files()
 
 meta = {}
-for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-    for fn in filenames:
-        if not fn.endswith(".csv"):
-            continue
-        fpath = os.path.join(dirpath, fn)
-        try:
-            metadata = parse_station_metadata(fpath)
-            if "station_no" not in metadata or metadata["station_no"] is None:
-                continue
-            number = metadata["station_no"]
-            meta.setdefault(number, {})
-            for value in ("name", "lat", "long"):
-                if value not in metadata or metadata[value] is None:
-                    continue
-                meta[number][value] = metadata[value]
-        except Exception as e:
-            print(f"Failed to parse metadata from {fpath}: {e}")
-        print(f"Processed {fpath}")
+
+# Get metadata
+# Loop over all the station records
+for p in files:
+    csv = load_station_csv(p)
+
+    try:
+        station_name = csv["Name"]
+        print(f"Processing station {station_name}")
+    except KeyError:
+        continue
+    if station_name not in meta:
+        meta[station_name] = {"number": "null", "latitude": "null", "longitude": "null"}
+    try:
+        if csv["Latitude"] != "null":
+            meta[station_name]["latitude"] = float(csv["Latitude"])
+    except Exception as e:
+        print("Problem with Latitude in page:", p, "Error:", e)
+    try:
+        if csv["Longitude"] != "null":
+            meta[station_name]["longitude"] = float(csv["Longitude"])
+    except Exception as e:
+        print("Problem with Longitude in page:", p, "Error:", e)
+    try:
+        if csv["Number"] != "null":
+            meta[station_name]["number"] = csv["Number"]
+    except Exception as e:
+        print("Problem with Station Number in page:", p, "Error:", e)
+
 
 # Save the metadata to a json file
 outf = os.path.join(os.getenv("PDIR"), "station_metadata.json")
