@@ -13,7 +13,7 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Authors and acknowledgements" href="credits.html" />
-    <link rel="prev" title="Robot Rainfall Rescue" href="index.html" /> 
+    <link rel="prev" title="Granite: Train against a sample of images with transcriptions" href="models/granite/train.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -22,7 +22,7 @@
           <a href="credits.html" title="Authors and acknowledgements"
              accesskey="N">next</a></li>
         <li class="right" >
-          <a href="index.html" title="Robot Rainfall Rescue"
+          <a href="models/granite/train.html" title="Granite: Train against a sample of images with transcriptions"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">How to reproduce and extend this work</a></li> 
@@ -53,9 +53,15 @@
   <span class="o">-</span> <span class="n">huggingface_hub</span><span class="o">&gt;=</span><span class="mf">0.33</span>
   <span class="o">-</span> <span class="n">transformers</span><span class="o">&gt;=</span><span class="mf">4.51.3</span>
 <span class="c1">#  - diffusers&gt;=0.35.0</span>
-  
+<span class="c1"># Gemini API</span>
+  <span class="o">-</span> <span class="n">google</span><span class="o">-</span><span class="n">generativeai</span><span class="o">=</span><span class="mf">0.8.5</span>
+  <span class="o">-</span> <span class="n">grpcio</span> <span class="c1"># Don&#39;t use this, but it&#39;s required by google-generativeai</span>
+<span class="c1"># Better JSON</span>
+  <span class="o">-</span> <span class="n">json5</span>  
 <span class="c1"># Download images from Google Drive</span>
   <span class="o">-</span> <span class="n">rclone</span><span class="o">=</span><span class="mf">1.69</span>
+<span class="c1"># Geospatial libraries</span>
+  <span class="o">-</span> <span class="n">cartopy</span>
 
 <span class="c1"># Azure</span>
   <span class="o">-</span> <span class="n">marshmallow</span><span class="o">=</span><span class="mf">3.26</span>  <span class="c1"># V4 breaks azure login</span>
@@ -80,12 +86,15 @@
       <span class="o">-</span> <span class="n">protobuf</span>
       <span class="o">-</span> <span class="n">sentencepiece</span>
       <span class="o">-</span> <span class="n">flash</span><span class="o">-</span><span class="n">attention</span>
+      <span class="o">-</span> <span class="n">num2words</span>
       <span class="o">-</span> <span class="n">datasets</span><span class="o">==</span><span class="mf">3.3.2</span>
       <span class="o">-</span> <span class="n">tensorboardX</span>
       <span class="o">-</span> <span class="n">tensorboard</span>
       <span class="o">-</span> <span class="n">opencensus</span><span class="o">-</span><span class="n">ext</span><span class="o">-</span><span class="n">logging</span>
+      <span class="o">-</span> <span class="n">pymilvus</span><span class="p">[</span><span class="n">milvus_lite</span><span class="p">]</span>
       <span class="o">-</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">huggingface</span><span class="o">/</span><span class="n">diffusers</span>
-     
+      <span class="o">-</span> <span class="n">mistral</span><span class="o">-</span><span class="n">common</span>
+      <span class="o">-</span> <span class="n">outlines</span>
 
 <span class="n">variables</span><span class="p">:</span>
 <span class="c1"># Tell python to look for modules in the root directory of the project</span>
@@ -96,6 +105,7 @@
 
 <span class="c1"># Project data path</span>
   <span class="n">PDIR</span><span class="p">:</span> <span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">scratch</span><span class="o">/</span><span class="n">philip</span><span class="o">.</span><span class="n">brohan</span><span class="o">/</span><span class="n">Robot_Rainfall_Rescue</span>
+  <span class="n">DOCS</span><span class="p">:</span> <span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">scratch</span><span class="o">/</span><span class="n">philip</span><span class="o">.</span><span class="n">brohan</span><span class="o">/</span><span class="n">documents</span>
 
 <span class="c1"># Tell huggingface where to store model weights</span>
   <span class="n">HF_HOME</span><span class="p">:</span> <span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">philip</span><span class="o">.</span><span class="n">brohan</span><span class="o">/</span><span class="n">huggingface</span>
@@ -121,6 +131,45 @@
               <img class="logo" src="_static/RRR_logo.png" alt="Logo of Robot Rainfall Rescue"/>
             </a></p>
 <h3><a href="index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/get_data.html">Download the Rainfall Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/diagnostics.html">Diagnostic plots for Rainfall_Rescue data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rainfall_rescue/utilities.html">Utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/image.html">Image utilities</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="RR_utils/hf.html">Huggingface interface functions</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Code to use SmolVLM to extract data from a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/prompts.html">Prompts used to control the extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bextracted.html">Code to plot the results</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract_multi.html">Code to run SmolVLM on a set of images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats.html">Plot percentage success rate</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/gemma.html">Code to repeat the analysis with Google Gemma-3-4b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/granite.html">Code to repeat the analysis with IBM Granite</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_agreement.html">Code to plot multi-model results compared with a sample image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_stats_agreement.html">Code to plot multi-model statistics over a set of images</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/train.html">Code to fine-tune SmolVLM</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/smolvlm/extract.html">Run the trained model on a single image</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/plot_image%2Bcomparison.html">Show comparison between two models for a single image</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models/gemma/train.html">Code to train Gemma</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/granite/train.html">Code to train Granite</a></li>
+</ul>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">How to reproduce or extend this work</a></li>
 <li class="toctree-l1"><a class="reference internal" href="credits.html">Authors and acknowledgements</a></li>
@@ -148,7 +197,7 @@ Please <a href="https://github.com/philip-brohan/Robot_Rainfall_Rescue/issues/ne
           <a href="credits.html" title="Authors and acknowledgements"
              >next</a></li>
         <li class="right" >
-          <a href="index.html" title="Robot Rainfall Rescue"
+          <a href="models/granite/train.html" title="Granite: Train against a sample of images with transcriptions"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">RRR</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">How to reproduce and extend this work</a></li> 
