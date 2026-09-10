@@ -1,6 +1,21 @@
 Robot Rainfall Rescue
 =====================
 
+This is the first in a set of three projects demonstrating a 100% AI method to do large-scale `Climate Data Rescue <https://climate.copernicus.eu/sites/default/files/2020-02/BestPracticeGuidelines_ClimateDataRescue_0.pdf>`_:
+
+- **This project** demonstrates the basic approach: How to fine-tune an ensemble of small Vision Language Models to convert a large collection of photographs of historical documents containing numerical weather records into computer-readable form.
+- |Auto Daily Rainfall| applies the approach to the 660,000 pages of the UK Daily Rainfall Reports (England and Wales). It demonstrates fine-tuning without any training data, and produces a full ensemble transcription.
+- |Auto Daily Rainfall QC| takes the raw transcriptions, applies metadata (locations and dates), does basic QC and deduplication, and outputs `73 million daily rainfall observations <https://doi.org/10.5281/zenodo.21905160>`_ as ready-to-use `Station Exchange Format (SEF) <https://datarescue.climate.copernicus.org/station-exchange-format-sef>`_ files.
+
+.. |Auto Daily Rainfall| raw:: html
+
+   <a href="https://brohan.org/Auto-Daily-Rainfall/"><strong>Auto Daily Rainfall</strong></a>
+
+.. |Auto Daily Rainfall QC| raw:: html
+
+   <a href="https://brohan.org/Auto-Daily-Rainfall-QC/"><strong>Auto Daily Rainfall QC</strong></a>
+
+
 The `Rainfall Rescue project <https://climatelabbook.substack.com/p/rainfall-rescue-5-years-on>`_ used contributions from 16,000 volunteers to rescue more than 5 million historical weather observations from paper records. The project was a great success, but it's proved hard to replicate and scale up - recruiting and managing volunteer contributions at scale is very challenging. So we'd like to `do data rescue with Artificial Intelligence (AI) <https://brohan.org/AI_daily_precip/>`_, instead of using volunteers, to get a process we can run at scale, and on demand.
 
 Here I show that we can replicate the success of Rainfall Rescue using a few small `Vision Language Models (VLMs) <https://huggingface.co/blog/vlms>`_ instead of thousands of human volunteers. After fine-tuneing on 1000 images (1.5% of the full dataset), each VLM can recover about 95% of the rainfall records correctly. Using an ensemble of three fine-tuned VLMs, and requiring agreement between at least two models, we can recover about 98% of the records correctly. This is a similar accuracy rate to that achieved with human volunteers, and not only allows us to save the time of all the volunteers, but also the time of the project team in recruiting, training, and managing the project.
@@ -234,7 +249,7 @@ An ensemble of three small VLMs, fine-tuned on a training set of 1000 images, ca
    :align: center
    :figwidth: 95%
 
-This approach is cheap and easy and effective. The next step is to use it in anger - to apply it to a `large set of images that have *not* yet been rescued <https://digital.nmla.metoffice.gov.uk/index.php?name=SO_9903efdf-7f99-4cae-a723-8b3f426eea20>`_.
+This approach is cheap and easy and effective. The next step is to use it in anger - `to apply it to a large set of images that have *not* yet been rescued <https://brohan.org/Auto-Daily-Rainfall/>`_.
 
 My other main takeaway from this project is that I'm too `square <https://www.urbandictionary.com/define.php?term=square>`_. I was very slow to appreciate `Huggingface <https://huggingface.co/>`_ - how can you take seriously a web-site named after an emoji (🤗)? And I was slow to internalize the `bitter lesson <http://www.incompleteideas.net/IncIdeas/BitterLesson.html>`_ - don't try and impose your own structure on the problem, just deploy generic AI and let it learn. Use pre-trained general-purpose AIs and use them on as much of the problem as possible.
 
